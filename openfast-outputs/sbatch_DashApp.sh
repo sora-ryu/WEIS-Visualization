@@ -1,3 +1,4 @@
+#!/bin/bash
 ## Modify walltime and account at minimum
 #SBATCH --time=00:10:00
 #SBATCH --account=bar
