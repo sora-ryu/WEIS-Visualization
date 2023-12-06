@@ -12,7 +12,7 @@ module load conda
 
 
 source activate /projects/bar/mchetan/weis-p2/env/weis-viz
-port=8050
+port=3030
 
 echo "run the following command on your machine"
 echo ""

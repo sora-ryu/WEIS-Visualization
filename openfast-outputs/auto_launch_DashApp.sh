@@ -38,13 +38,13 @@ do
                                 scancel $jobid
                                 exit 0
                         else
-                            	check=$(cat slurm-$jobid.out | grep http://127.0.0.1 | wc -l)
+                            	check=$(cat slurm-$jobid.out | grep http://0.0.0.0:3030/ | wc -l)
                                 if [ $check -gt 0 ]
                                 then
                                     	echo "okay, now run the follwing on your local machine:"
                                         echo $(cat slurm-$jobid.out | grep ssh)
                                         echo "then, navigate to the following on your local browser:"
-                                        echo $(cat slurm-$jobid.out | grep http://127.0.0.1 | head -1 | awk {'print $5'})
+                                        echo $(cat slurm-$jobid.out | grep http://0.0.0.0:3030/ | head -1 | awk {'print $5'})
                                         exit 0
                                 else
                                     	let "wait+=1"

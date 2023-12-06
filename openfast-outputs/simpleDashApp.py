@@ -42,5 +42,5 @@ def line_chart(signalx,signaly):
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="localhost")
+    app.run(debug=True, host="0.0.0.0",port="3030")
  
