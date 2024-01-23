@@ -27,7 +27,6 @@ app = Dash(__name__, external_stylesheets = external_stylesheets, suppress_callb
 navbar = dbc.NavbarSimple(
     children = [
         dbc.NavItem(dbc.NavLink("Home", href='/')),
-        dbc.NavItem(dbc.NavLink("Data Upload", href='/data_upload')),
         dbc.NavItem(dbc.NavLink("OpenFAST", href='/open_fast')),
         dbc.NavItem(dbc.NavLink("Optimize", href='/optimize')),
         dbc.NavItem(dbc.NavLink("3D Visualization", href='/3d_vis'))
