@@ -105,6 +105,21 @@ def layout():
     return layout
 
 
+def get_trace(row_idx, label):
+    
+    list_values = ['floatingse.constr_draft_heel_margin', 'floatingse.constr_fixed_margin', 'floatingse.constr_freeboard_heel_margin']
+    trace_list = []
+    if label in list_values:
+        for i in range(len(df[label][0])):
+            trace_list.append(go.Scatter(y = df[label].str[i], mode = 'lines+markers', name = label+'_'+str(i)))
+    
+    else:
+        trace_list.append(go.Scatter(y = df[label], mode = 'lines+markers', name = label))
+
+    return trace_list
+
+
+
 @callback(Output('conv-trend', 'figure'),
           Input('signaly', 'value'))
 def update_graphs(signaly):
@@ -120,12 +135,9 @@ def update_graphs(signaly):
 
     # Add traces
     for row_idx, label in enumerate(signaly):
-        fig.add_trace(go.Scatter(
-            y = df[label],
-            mode = 'lines',
-            name = label),
-            row = row_idx + 1,
-            col = 1)
+        trace_list = get_trace(row_idx, label)
+        for trace in trace_list:
+            fig.add_trace(trace, row=row_idx+1, col=1)
         fig.update_yaxes(title_text=label, row=row_idx+1, col=1)
     
     fig.update_layout(
@@ -139,8 +151,7 @@ def update_graphs(signaly):
     fig.update_xaxes(
         spikemode='across+marker',
         spikesnap='cursor',
-        title_text='Iteration'
-    )
+        title_text='Iteration')
 
     return fig
 
@@ -183,10 +194,10 @@ def visualize_stats(stats):
         feature_std = stats[feature]['std']
         feature_mean = stats[feature]['mean']   # (n,1) where n-runs has been implemented for optimization
         feature_median = stats[feature]['median']
-        logging.info(feature_mean)
-        logging.info(feature_mean[2])
+        # logging.info(feature_mean)
+        # logging.info(feature_mean[2])       # Works (start index from 0)
         fig.add_trace(go.Scatter(
-            y=[feature_mean['IEA_22_Semi_79']],
+            y=[feature_mean[2]],
             name = feature + '_mean')
         )
 
