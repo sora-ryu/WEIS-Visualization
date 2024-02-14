@@ -114,6 +114,18 @@ def read_log(log_file_path):
     # df.to_csv('visualization_demo/log_opt.csv', index=False)
 
 
+def empty_figure():
+    '''
+    Draw empty figure showing nothing once initialized
+    '''
+    fig = go.Figure(go.Scatter(x=[], y=[]))
+    fig.update_layout(template=None)
+    fig.update_xaxes(showgrid=False, showticklabels=False, zeroline=False)
+    fig.update_yaxes(showgrid=False, showticklabels=False, zeroline=False)
+
+    return fig
+
+
 def layout():
     log_file_path = 'visualization_demo/log_opt.sql'
     read_log(log_file_path)
@@ -127,13 +139,14 @@ def layout():
         html.Div([
             html.H5("Signal-y"),
             dcc.Dropdown(id="signaly", options=sorted(df.keys()), multi=True),
-            dcc.Graph(id='conv-trend'),
+            dcc.Graph(id='conv-trend', figure=empty_figure()),
         ], style = {'width': '59%', 'display': 'inline-block'}),
 
         # Visualize Specific Iteration data
         html.Div([
-            html.H3(id='dlc-output-iteration'),
-            dcc.Graph(id='dlc-output'),
+            html.H3(id='dlc-output-iteration', style={'textAlign':'center'}),
+            dcc.Dropdown(id='y-channel'),
+            dcc.Graph(id='dlc-output', figure=empty_figure()),
         ], style = {'width': '39%', 'float': 'right', 'display': 'inline', 'padding': '0 20'})
     ])
 
