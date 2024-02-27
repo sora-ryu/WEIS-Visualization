@@ -56,5 +56,5 @@ WEIS Output/
 
 ## Quarter 2
 - [x] Implement Optimization page - optimization convergence data
-- [ ] Implement Optimization page - DLC/OpenFAST statistics
+- [x] Implement Optimization page - DLC/OpenFAST statistics
 - [ ] Implement Optimization page - outlier DLC with OpenFAST time-series

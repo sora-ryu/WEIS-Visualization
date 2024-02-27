@@ -145,8 +145,7 @@ def layout():
         # Visualize Specific Iteration data
         html.Div([
             html.H3(id='dlc-output-iteration', style={'textAlign':'center'}),
-            dcc.Dropdown(id='y-channel'),
-            dcc.Graph(id='dlc-output', figure=empty_figure()),
+            html.Div(id='dlc-iteration-data'),
         ], style = {'width': '39%', 'float': 'right', 'display': 'inline', 'padding': '0 20'})
     ])
 
@@ -206,7 +205,7 @@ def update_graphs(signaly):
 
 
 @callback(Output('dlc-output-iteration', 'children'),
-          Output('dlc-output', 'figure'),
+          Output('dlc-iteration-data', 'children'),
           Input('conv-trend', 'hoverData'))
 def update_dlc_outputs(hoverData):
 
@@ -215,19 +214,34 @@ def update_dlc_outputs(hoverData):
     
     iteration = hoverData['points'][0]['x']
     title_phrase = f'DLC Analysis on Iteration {iteration}'
-    if iteration != 0:
-        return title_phrase, go.Figure()
+    if not iteration in [0, 1, 51]:
+        return title_phrase, None
     
+    global stats
+    global cm
     stats = read_per_iteration(iteration)
     case_matrix_path = 'visualization_demo/openfast_runs/rank_0/case_matrix.yaml'
     cm = read_cm(case_matrix_path)
-    fig = plot_dlc(cm, stats)
+    # fig = plot_dlc(cm, stats)
 
-    return title_phrase, fig
+    multi_indices = sorted(stats.reset_index().keys()),
+
+    sublayout = html.Div([
+        html.H5("X Channel Statistics"),
+        dcc.RadioItems(options=['min', 'max', 'std', 'mean', 'median', 'abs', 'integrated'], value='mean', inline=True, id='x-stat-option'),
+        html.H5("Y Channel Statistics"),
+        dcc.RadioItems(options=['min', 'max', 'std', 'mean', 'median', 'abs', 'integrated'], value='max', inline=True, id='y-stat-option'),
+        html.H5("X Channel"),
+        dcc.Dropdown(id='x-channel', options=sorted(set([multi_key[0] for idx, multi_key in enumerate(multi_indices[0])]))),
+        html.H5("Y Channel"),
+        dcc.Dropdown(id='y-channel', options=sorted(set([multi_key[0] for idx, multi_key in enumerate(multi_indices[0])])), multi=True),
+        dcc.Graph(id='dlc-output', figure=empty_figure()),
+    ])
+
+    return title_phrase, sublayout
 
 
 def read_per_iteration(iteration):
-    
     iteration_path = 'visualization_demo/openfast_runs/rank_0/iteration_{}'.format(iteration)
     stats = pd.read_pickle(iteration_path+'/summary_stats.p')
     dels = pd.read_pickle(iteration_path+'/DELs.p')
@@ -236,7 +250,20 @@ def read_per_iteration(iteration):
     return stats
 
 
-def plot_dlc(cm, stats):
+@callback(Output('dlc-output', 'figure'),
+          Input('x-stat-option', 'value'),
+          Input('y-stat-option', 'value'),
+          Input('x-channel', 'value'),
+          Input('y-channel', 'value'))
+def update_dlc_plot(x_chan_option, y_chan_option, x_channel, y_channel):
+    if stats is None or x_channel is None or y_channel is None:
+        raise PreventUpdate
+
+    fig = plot_dlc(cm, stats, x_chan_option, y_chan_option, x_channel, y_channel)
+
+    return fig
+
+def plot_dlc(cm, stats, x_chan_option, y_chan_option, x_channel, y_channels):
     '''
     Function from:
     https://github.com/WISDEM/WEIS/blob/main/examples/16_postprocessing/rev_DLCs_WEIS.ipynb
@@ -244,10 +271,12 @@ def plot_dlc(cm, stats):
     Plot channel maxima vs mean wind speed for each DLC - channel: user specify
     '''
     dlc_inds = {}
-    y_channels = ['GenSpeed', 'PtfmPitch', 'PtfmRoll', 'PtfmYaw']
-    x_channel = 'Wind1VelX'
-    y_chan_option = 'max'
-    x_chan_option = 'mean'
+    # print("X_channel", x_channel)
+    # print("x_chan_option", x_chan_option)
+    # y_channels = ['GenSpeed', 'PtfmPitch', 'PtfmRoll', 'PtfmYaw']
+    # x_channel = 'Wind1VelX'
+    # y_chan_option = 'max'
+    # x_chan_option = 'mean'
 
     dlcs = cm[('DLC', 'Label')].unique()
     for dlc in dlcs:

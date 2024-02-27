@@ -129,7 +129,7 @@ def analyze(store):
             [
                 html.H5("Signal-y"),
                 dcc.Dropdown(
-                    id="signaly", options=sorted(df.keys()), multi=True
+                    id="signaly", options=sorted(df.keys()), multi=True         # options look like ['Azimuth', 'B1N1Alpha', ...]
                 ),
                 html.H5("Signal-x"),
                 dcc.Dropdown(
