@@ -1,6 +1,7 @@
 '''This is the page for visualize the optimization results'''
 
-from dash import html, register_page, callback, Input, Output, dcc, dash_table
+import dash_bootstrap_components as dbc
+from dash import html, register_page, callback, Input, Output, dcc, State
 import pandas as pd
 import numpy as np
 import logging
@@ -11,6 +12,7 @@ from plotly.subplots import make_subplots
 import plotly.express as px
 import plotly.graph_objects as go
 from dash.exceptions import PreventUpdate
+import json
 
 register_page(
     __name__,
@@ -133,20 +135,29 @@ def layout():
     layout = html.Div([
 
         # Headline
-        html.H1(["Optimization"]),
+        # html.H1(['Optimization']),
 
         # Visualize Conv-trend data
         html.Div([
-            html.H5("Signal-y"),
-            dcc.Dropdown(id="signaly", options=sorted(df.keys()), multi=True),
+            html.H5('Y-Channel to visualize from Convergence trend data'),
+            dcc.Dropdown(id='signaly', options=sorted(df.keys()), multi=True),
             dcc.Graph(id='conv-trend', figure=empty_figure()),
-        ], style = {'width': '59%', 'display': 'inline-block'}),
+        ], style = {'width': '49%', 'display': 'inline-block', 'margin-left': '15px'}),
 
         # Visualize Specific Iteration data
-        html.Div([
+        html.Div(dcc.Loading(html.Div([
             html.H3(id='dlc-output-iteration', style={'textAlign':'center'}),
             html.Div(id='dlc-iteration-data'),
-        ], style = {'width': '39%', 'float': 'right', 'display': 'inline', 'padding': '0 20'})
+        ])), style = {'width': '49%', 'display': 'inline-block', 'margin-left': '15px'}),
+
+        # Visualize Outlier timeseries data with modal
+        dcc.Loading(dbc.Modal([
+            dbc.ModalHeader(dbc.ModalTitle('Header')),
+            dbc.ModalBody(html.Div(id='outlier'))],
+            id='outlier-div',
+            size='lg',
+            is_open=False
+        ))
     ])
 
     return layout
@@ -206,13 +217,14 @@ def update_graphs(signaly):
 
 @callback(Output('dlc-output-iteration', 'children'),
           Output('dlc-iteration-data', 'children'),
-          Input('conv-trend', 'hoverData'))
-def update_dlc_outputs(hoverData):
+          Input('conv-trend', 'clickData'))
+def update_dlc_outputs(clickData):
 
-    if hoverData is None:
+    if clickData is None:
         raise PreventUpdate
     
-    iteration = hoverData['points'][0]['x']
+    global iteration
+    iteration = clickData['points'][0]['x']
     title_phrase = f'DLC Analysis on Iteration {iteration}'
     if not iteration in [0, 1, 51]:
         return title_phrase, None
@@ -228,6 +240,49 @@ def update_dlc_outputs(hoverData):
 
     sublayout = html.Div([
         html.H5("X Channel Statistics"),
+        # dcc.RadioItems(options=['min', 'max', 'std', 'mean', 'median', 'abs', 'integrated'], value='mean', inline=True, id='x-stat-option'),
+        html.Div([dbc.RadioItems(
+            id='x-stat-option',
+            className="btn-group",
+            inputClassName="btn-check",
+            labelClassName="btn btn-outline-primary",
+            labelCheckedClassName="active",
+            options=[
+                {'label': 'min', 'value': 'min'},
+                {'label': 'max', 'value': 'max'},
+                {'label': 'std', 'value': 'std'},
+                {'label':  'mean', 'value': 'mean'},
+                {'label': 'median', 'value': 'median'},
+                {'label': 'abs', 'value': 'abs'},
+                {'label': 'integrated', 'value': 'integrated'}],
+        )], className='radio-group'),
+        html.H5("Y Channel Statistics"),
+        html.Div([dbc.RadioItems(
+            id='y-stat-option',
+            className="btn-group",
+            inputClassName="btn-check",
+            labelClassName="btn btn-outline-primary",
+            labelCheckedClassName="active",
+            options=[
+                {'label': 'min', 'value': 'min'},
+                {'label': 'max', 'value': 'max'},
+                {'label': 'std', 'value': 'std'},
+                {'label':  'mean', 'value': 'mean'},
+                {'label': 'median', 'value': 'median'},
+                {'label': 'abs', 'value': 'abs'},
+                {'label': 'integrated', 'value': 'integrated'}],
+        )], className='radio-group'),
+        html.H5("X Channel"),
+        dcc.Dropdown(id='x-channel', options=sorted(set([multi_key[0] for idx, multi_key in enumerate(multi_indices[0])]))),
+        html.H5("Y Channel"),
+        dcc.Dropdown(id='y-channel', options=sorted(set([multi_key[0] for idx, multi_key in enumerate(multi_indices[0])])), multi=True),
+        dcc.Graph(id='dlc-output', figure=empty_figure()),
+    ])
+
+    '''
+    # Radio Items Option
+    sublayout = html.Div([
+        html.H5("X Channel Statistics"),
         dcc.RadioItems(options=['min', 'max', 'std', 'mean', 'median', 'abs', 'integrated'], value='mean', inline=True, id='x-stat-option'),
         html.H5("Y Channel Statistics"),
         dcc.RadioItems(options=['min', 'max', 'std', 'mean', 'median', 'abs', 'integrated'], value='max', inline=True, id='y-stat-option'),
@@ -237,6 +292,7 @@ def update_dlc_outputs(hoverData):
         dcc.Dropdown(id='y-channel', options=sorted(set([multi_key[0] for idx, multi_key in enumerate(multi_indices[0])])), multi=True),
         dcc.Graph(id='dlc-output', figure=empty_figure()),
     ])
+    '''
 
     return title_phrase, sublayout
 
@@ -271,12 +327,6 @@ def plot_dlc(cm, stats, x_chan_option, y_chan_option, x_channel, y_channels):
     Plot channel maxima vs mean wind speed for each DLC - channel: user specify
     '''
     dlc_inds = {}
-    # print("X_channel", x_channel)
-    # print("x_chan_option", x_chan_option)
-    # y_channels = ['GenSpeed', 'PtfmPitch', 'PtfmRoll', 'PtfmYaw']
-    # x_channel = 'Wind1VelX'
-    # y_chan_option = 'max'
-    # x_chan_option = 'mean'
 
     dlcs = cm[('DLC', 'Label')].unique()
     for dlc in dlcs:
@@ -302,6 +352,48 @@ def plot_dlc(cm, stats, x_chan_option, y_chan_option, x_channel, y_channels):
         height=300 * len(y_channels))
     
     return fig
+
+@callback(Output('outlier-div', 'is_open'),
+          Input('dlc-output', 'clickData'),
+          State('outlier-div', 'is_open'))
+def toggle_modal(n1, is_open):
+    if n1:
+        return not is_open
+    return is_open
+
+@callback(Output('outlier', 'children'),
+          Input('dlc-output', 'clickData'))
+def display_outlier(clickData):
+
+    if clickData is None:
+        raise PreventUpdate
+    
+    print("clickData\n", clickData)
+    of_run_num = clickData['points'][0]['pointIndex']
+    print("corresponding openfast run: ", of_run_num)
+
+    timeseries_data = get_timeseries_data(of_run_num, stats, iteration)
+    print(timeseries_data)
+
+    return json.dumps(clickData, indent=2)
+
+
+def get_timeseries_data(run_num, stats, iteration):
+    print("stats\n", stats)
+    stats = stats.reset_index()     # make 'index' column that has elements of 'IEA_22_Semi_00, ...'
+    print("stats\n", stats)
+    filename = stats.loc[run_num, 'index'].to_string()      # filenames are not same - stats: IEA_22_Semi_83 / timeseries/: IEA_22_Semi_0_83.p
+    if filename.split('_')[-1].startswith('0'):
+        filename = ('_'.join(filename.split('_')[:-1])+'_0_'+filename.split('_')[-1][1:]+'.p').strip()
+    else:
+        filename = ('_'.join(filename.split('_')[:-1])+'_0_'+filename.split('_')[-1]+'.p').strip()
+    print("filename: ", filename)
+    # visualization_demo/openfast_runs/rank_0/iteration_0/timeseries/IEA_22_Semi_0_0.p
+    timeseries_path = 'visualization_demo/openfast_runs/rank_0/iteration_{}/timeseries/{}'.format(iteration, filename)
+    print('timeseries_path\n', timeseries_path)
+    timeseries_data = pd.read_pickle(timeseries_path)
+
+    return timeseries_data
 
 
 # Don't need
