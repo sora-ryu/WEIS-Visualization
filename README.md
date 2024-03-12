@@ -57,6 +57,6 @@ WEIS Output/
 ## Quarter 2
 - [x] Implement Optimization page - optimization convergence data
 - [x] Implement Optimization page - DLC/OpenFAST statistics
-- [ ] Implement Optimization page - outlier DLC with OpenFAST time-series with modal window
+- [x] Implement Optimization page - outlier DLC with OpenFAST time-series with modal window
 - [ ] Implement Optimization page - update layout to handle a bunch of plots
 - [ ] Overall Design - Theme / Typography / Button CSS

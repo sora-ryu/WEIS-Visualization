@@ -155,7 +155,7 @@ def layout():
             dbc.ModalHeader(dbc.ModalTitle('Header')),
             dbc.ModalBody(html.Div(id='outlier'))],
             id='outlier-div',
-            size='lg',
+            size='xl',
             is_open=False
         ))
     ])
@@ -372,14 +372,53 @@ def display_outlier(clickData):
     of_run_num = clickData['points'][0]['pointIndex']
     print("corresponding openfast run: ", of_run_num)
 
+    global timeseries_data
     timeseries_data = get_timeseries_data(of_run_num, stats, iteration)
     print(timeseries_data)
 
-    return json.dumps(clickData, indent=2)
+    # return json.dumps(clickData, indent=2)
+    sublayout = dcc.Loading(html.Div([
+        html.H5("Channel to visualize timeseries data"),
+        dcc.Dropdown(id='time-signaly', options=sorted(timeseries_data.keys()), multi=True),
+        dcc.Graph(id='time-graph', figure=empty_figure())
+    ]))
+
+    return sublayout
+
+@callback(Output('time-graph', 'figure'),
+          Input('time-signaly', 'value'))
+def update_timegraphs(signaly):
+
+    if signaly is None:
+        raise PreventUpdate
+
+    fig = make_subplots(rows = 1, cols = 1)
+    for col_idx, label in enumerate(signaly):
+        fig.append_trace(go.Scatter(
+            x = timeseries_data['Time'],
+            y = timeseries_data[label],
+            mode = 'lines',
+            name = label),
+            row = 1,
+            col = 1)
+    # fig.update_layout(
+    #     height=250 * len(signaly),
+    #     hovermode='x unified',
+    #     title='Convergence Trend from Optimization',
+    #     title_x=0.5)
+
+    # fig.update_traces(xaxis='x'+str(len(signaly)))   # Spike line hover extended to all subplots
+
+    # fig.update_xaxes(
+    #     spikemode='across+marker',
+    #     spikesnap='cursor',
+    #     title_text='Iteration')
+
+    return fig
 
 
 def get_timeseries_data(run_num, stats, iteration):
-    print("stats\n", stats)
+    
     stats = stats.reset_index()     # make 'index' column that has elements of 'IEA_22_Semi_00, ...'
     print("stats\n", stats)
     filename = stats.loc[run_num, 'index'].to_string()      # filenames are not same - stats: IEA_22_Semi_83 / timeseries/: IEA_22_Semi_0_83.p
@@ -387,10 +426,10 @@ def get_timeseries_data(run_num, stats, iteration):
         filename = ('_'.join(filename.split('_')[:-1])+'_0_'+filename.split('_')[-1][1:]+'.p').strip()
     else:
         filename = ('_'.join(filename.split('_')[:-1])+'_0_'+filename.split('_')[-1]+'.p').strip()
-    print("filename: ", filename)
+    
     # visualization_demo/openfast_runs/rank_0/iteration_0/timeseries/IEA_22_Semi_0_0.p
     timeseries_path = 'visualization_demo/openfast_runs/rank_0/iteration_{}/timeseries/{}'.format(iteration, filename)
-    print('timeseries_path\n', timeseries_path)
+    print('timeseries_path:\n', timeseries_path)
     timeseries_data = pd.read_pickle(timeseries_path)
 
     return timeseries_data
