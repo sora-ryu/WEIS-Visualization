@@ -152,7 +152,7 @@ def layout():
 
         # Visualize Outlier timeseries data with modal
         dcc.Loading(dbc.Modal([
-            dbc.ModalHeader(dbc.ModalTitle('Header')),
+            dbc.ModalHeader(dbc.ModalTitle(html.Div(id='outlier-header'))),
             dbc.ModalBody(html.Div(id='outlier'))],
             id='outlier-div',
             size='xl',
@@ -227,7 +227,7 @@ def update_dlc_outputs(clickData):
     iteration = clickData['points'][0]['x']
     title_phrase = f'DLC Analysis on Iteration {iteration}'
     if not iteration in [0, 1, 51]:
-        return title_phrase, None
+        return title_phrase, html.Div([html.H5("Please select other iteration..")])
     
     global stats
     global cm
@@ -255,6 +255,7 @@ def update_dlc_outputs(clickData):
                 {'label': 'median', 'value': 'median'},
                 {'label': 'abs', 'value': 'abs'},
                 {'label': 'integrated', 'value': 'integrated'}],
+            value='min'
         )], className='radio-group'),
         html.H5("Y Channel Statistics"),
         html.Div([dbc.RadioItems(
@@ -271,11 +272,12 @@ def update_dlc_outputs(clickData):
                 {'label': 'median', 'value': 'median'},
                 {'label': 'abs', 'value': 'abs'},
                 {'label': 'integrated', 'value': 'integrated'}],
+            value='min'
         )], className='radio-group'),
         html.H5("X Channel"),
-        dcc.Dropdown(id='x-channel', options=sorted(set([multi_key[0] for idx, multi_key in enumerate(multi_indices[0])]))),
+        dcc.Dropdown(id='x-channel', options=sorted(set([multi_key[0] for idx, multi_key in enumerate(multi_indices[0])])), value='Wind1VelX'),
         html.H5("Y Channel"),
-        dcc.Dropdown(id='y-channel', options=sorted(set([multi_key[0] for idx, multi_key in enumerate(multi_indices[0])])), multi=True),
+        dcc.Dropdown(id='y-channel', options=sorted(set([multi_key[0] for idx, multi_key in enumerate(multi_indices[0])])), value=['Wind1VelY', 'Wind1VelZ'], multi=True),
         dcc.Graph(id='dlc-output', figure=empty_figure()),
     ])
 
@@ -361,7 +363,8 @@ def toggle_modal(n1, is_open):
         return not is_open
     return is_open
 
-@callback(Output('outlier', 'children'),
+@callback(Output('outlier-header', 'children'),
+          Output('outlier', 'children'),
           Input('dlc-output', 'clickData'))
 def display_outlier(clickData):
 
@@ -373,17 +376,17 @@ def display_outlier(clickData):
     print("corresponding openfast run: ", of_run_num)
 
     global timeseries_data
-    timeseries_data = get_timeseries_data(of_run_num, stats, iteration)
+    filename, timeseries_data = get_timeseries_data(of_run_num, stats, iteration)
     print(timeseries_data)
 
     # return json.dumps(clickData, indent=2)
     sublayout = dcc.Loading(html.Div([
         html.H5("Channel to visualize timeseries data"),
-        dcc.Dropdown(id='time-signaly', options=sorted(timeseries_data.keys()), multi=True),
+        dcc.Dropdown(id='time-signaly', options=sorted(timeseries_data.keys()), value=['Wind1VelX', 'Wind1VelY', 'Wind1VelZ'], multi=True),
         dcc.Graph(id='time-graph', figure=empty_figure())
     ]))
 
-    return sublayout
+    return filename, sublayout
 
 @callback(Output('time-graph', 'figure'),
           Input('time-signaly', 'value'))
@@ -432,7 +435,7 @@ def get_timeseries_data(run_num, stats, iteration):
     print('timeseries_path:\n', timeseries_path)
     timeseries_data = pd.read_pickle(timeseries_path)
 
-    return timeseries_data
+    return filename, timeseries_data
 
 
 # Don't need

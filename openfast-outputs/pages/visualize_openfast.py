@@ -43,8 +43,8 @@ def layout():
             },
             # multiple=True         # Allow multiple files to be uploaded
         ),
-        html.Div(id='output-data-upload'),
-        html.Div(id='openfast-div')
+        dcc.Loading(html.Div(id='output-data-upload')),
+        dcc.Loading(html.Div(id='openfast-div'))
     ])
     return layout
 
@@ -129,11 +129,11 @@ def analyze(store):
             [
                 html.H5("Signal-y"),
                 dcc.Dropdown(
-                    id="signaly", options=sorted(df.keys()), multi=True         # options look like ['Azimuth', 'B1N1Alpha', ...]
+                    id="signaly", options=sorted(df.keys()), value=['Wind1VelX', 'Wind1VelY', 'Wind1VelZ'], multi=True         # options look like ['Azimuth', 'B1N1Alpha', ...]
                 ),
                 html.H5("Signal-x"),
                 dcc.Dropdown(
-                    id="signalx", options=sorted(df.keys())
+                    id="signalx", options=sorted(df.keys()), value='Time'
                 ),
                 html.Br(),
                 html.H5("Plot Options"),
@@ -141,10 +141,20 @@ def analyze(store):
                     options=['single plot', 'multiple plot'], value='single plot', inline=True, id='plotOption'
                 ),
                 html.Br(),
-                dcc.Graph(id="line")
+                dcc.Graph(id="line", figure=empty_figure())
             ]
         )
 
+def empty_figure():
+    '''
+    Draw empty figure showing nothing once initialized
+    '''
+    fig = go.Figure(go.Scatter(x=[], y=[]))
+    fig.update_layout(template=None)
+    fig.update_xaxes(showgrid=False, showticklabels=False, zeroline=False)
+    fig.update_yaxes(showgrid=False, showticklabels=False, zeroline=False)
+
+    return fig
 
 # Add controls to build the interaction
 @callback(
@@ -159,7 +169,10 @@ def draw_graphs(signalx, signaly, plotOption, store):
     # fig = tls.make_subplots(rows=1, cols=1, shared_xaxes=True, verical_spacing=0.009, horizontal_spacing=0.009)
     # fig = go.Figure()
 
-    if (signalx is None) or (signaly == []):        # Do not update the graph
+    # if (signalx is None) or (signaly == []):        # Do not update the graph
+    #     raise PreventUpdate
+    
+    if store is None:
         raise PreventUpdate
 
     else:
