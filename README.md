@@ -49,6 +49,11 @@ WEIS Output/
         └── iteration_m/                         # Where we have m iterations in this specific weis optimization example
 ```
 
+## Guideline for building customized viz function for WISDEM output
+1. Add NavItem from mainApp.py. Add dropdownmenu item at line 33 and declare href link to the page.
+2. Create page under pages/ folder. Try to set the name with visualize_wisdem_<>.py.
+3. Register the page with href link you defined from Step 1.
+
 # To-Do Checklist
 ## Quarter 1
 - [x] Build multi-page app prototype
@@ -58,5 +63,8 @@ WEIS Output/
 - [x] Implement Optimization page - optimization convergence data
 - [x] Implement Optimization page - DLC/OpenFAST statistics
 - [x] Implement Optimization page - outlier DLC with OpenFAST time-series with modal window
-- [ ] Implement Optimization page - update layout to handle a bunch of plots
-- [ ] Overall Design - Theme / Typography / Button CSS
+- [x] Implement Optimization page - update layout to handle a bunch of plots
+- [ ] Implement WISDEM Viz page - blade
+- [ ] Implement WISDEM Viz page - cost
+- [ ] Implement WISDEM Viz page - doc for customized viz function
+- [ ] Overall Layout Design with Theme / Typography / Button CSS
