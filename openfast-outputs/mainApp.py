@@ -59,9 +59,40 @@ app.layout = dcc.Loading(
     fullscreen = True
 )
 
+# might have to move this to viz utils
+def checkPort(port, host="0.0.0.0"):
+    import socket
+    # check port availability and then close the socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    result = False
+    try:
+        sock.bind((host, port))
+        result = True
+    except:
+        result = False
+
+    sock.close()
+    return result
 
 
 # Run the app
 if __name__ == "__main__":
+
+    import argparse
+    parser = argparse.ArgumentParser(description='WEIS Visualization App')
+    parser.add_argument('--port', type=int, default=8050, help='Port number to run the app')
+    parser.add_argument('--host', type=str, default="0.0.0.0", help='Host IP to run the app')
+    parser.add_argument('--debug', type=bool, default=False, help='Debug mode')
+
+    args = parser.parse_args()
+
+    # test the port availability, flask calls the main function twice in debug mode
+    if not checkPort(args.port, args.host) and not args.debug:
+        print(f"Port {args.port} is already in use. Please change the port number and try again.")
+        print(f"To change the port number, pass the port number with the '--port' flag. eg: python mainApp.py --port {args.port+1}")
+        print("Exiting the app.")
+        exit()
+
     logging.basicConfig(level=logging.DEBUG)        # For debugging
-    app.run(debug=True, host="0.0.0.0",port="3030")
+    app.run(debug=args.debug, host=args.host, port=args.port)
+
