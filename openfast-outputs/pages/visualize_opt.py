@@ -1,5 +1,11 @@
 '''This is the page for visualize the optimization results'''
 
+'''
+For understanding:
+Callback function - Add controls to build the interaction. Automatically run this function whenever changes detected from either Input or State. Update the output.
+'''
+
+# Import Packages
 import dash_bootstrap_components as dbc
 from dash import html, register_page, callback, Input, Output, dcc, State
 import pandas as pd
@@ -13,6 +19,11 @@ import plotly.express as px
 import plotly.graph_objects as go
 from dash.exceptions import PreventUpdate
 import json
+from utils.utils import *
+
+# Not working, import locally for now..
+# from weis.aeroelasticse.FileTools import load_yaml
+# from weis.visualization.utils import read_cm, load_OMsql, parse_contents
 
 register_page(
     __name__,
@@ -20,6 +31,7 @@ register_page(
     top_nav=True,
     path='/optimize'
 )
+
 
 def load_OMsql(log):
     """
@@ -110,43 +122,31 @@ def read_cm(cm_file):
 
 
 def read_log(log_file_path):
-    global df
+    global df       # set the dataframe as a global variable to access it from the get_trace() function.
     log_data = load_OMsql(log_file_path)
     df = parse_contents(log_data)
-    # df.to_csv('visualization_demo/log_opt.csv', index=False)
-
-
-def empty_figure():
-    '''
-    Draw empty figure showing nothing once initialized
-    '''
-    fig = go.Figure(go.Scatter(x=[], y=[]))
-    fig.update_layout(template=None)
-    fig.update_xaxes(showgrid=False, showticklabels=False, zeroline=False)
-    fig.update_yaxes(showgrid=False, showticklabels=False, zeroline=False)
-
-    return fig
+    # df.to_csv('RAFT/log_opt.csv', index=False)
 
 
 def layout():
-    log_file_path = 'visualization_demo/log_opt.sql'
+    # log_file_path = 'visualization_demo/log_opt.sql'
+    log_file_path = 'RAFT/log_opt.sql'
     read_log(log_file_path)
 
+
+    # Layout UI will be updated with Card Container later..
     layout = html.Div([
-
-        # Headline
-        # html.H1(['Optimization']),
-
+        
         # Visualize Conv-trend data
         html.Div([
             html.H5('Y-Channel to visualize from Convergence trend data'),
-            dcc.Dropdown(id='signaly', options=sorted(df.keys()), multi=True),
-            dcc.Graph(id='conv-trend', figure=empty_figure()),
+            dcc.Dropdown(id='signaly', options=sorted(df.keys()), multi=True),      # Get 'signaly' from
+            dcc.Graph(id='conv-trend', figure=empty_figure()),                      # Initialize with empty figure and update with 'update-graphs() function'
         ], style = {'width': '49%', 'display': 'inline-block', 'margin-left': '15px'}),
 
         # Visualize Specific Iteration data
         html.Div(dcc.Loading(html.Div([
-            html.H3(id='dlc-output-iteration', style={'textAlign':'center'}),
+            html.H3(id='dlc-output-iteration', style={'textAlign':'center'}),       
             html.Div(id='dlc-iteration-data'),
         ])), style = {'width': '49%', 'display': 'inline-block', 'margin-left': '15px'}),
 
@@ -164,16 +164,36 @@ def layout():
 
 
 def get_trace(label):
-    
-    # The channels that have list values
-    list_values = ['floatingse.constr_draft_heel_margin', 'floatingse.constr_fixed_margin', 'floatingse.constr_freeboard_heel_margin']
+    '''
+    Add the line graph (trace) for each channel
+    '''
+    assert isinstance(df[label][0], np.ndarray) == True     # The cell should be numpy array either 2.303915527330266 with size 1 or [0.01905484 0.46378144 0.46889754 0.4688218  0.         0.] with size 6
     trace_list = []
-    if label in list_values:
-        for i in range(len(df[label][0])):
-            trace_list.append(go.Scatter(y = df[label].str[i], mode = 'lines+markers', name = label+'_'+str(i)))
+    print(f'{label}:')
+    print(df[label])
+    print("num of rows: ", len(df[label]))       # The number of rows
+    print("first cell: ", df[label][0])          # size of the list in each cell
+    print("dimension: ", df[label][0].ndim)
     
-    else:
+    # Need to parse the data depending on the dimension of values
+    if df[label][0].ndim == 0:      # For single value
+        print('Single value')
         trace_list.append(go.Scatter(y = df[label], mode = 'lines+markers', name = label))
+    
+    elif df[label][0].ndim == 1:    # For 1d-array
+        print('1D-array')
+        for i in range(df[label][0].size):
+            trace_list.append(go.Scatter(y = df[label].str[i], mode = 'lines+markers', name = label+'_'+str(i)))        # Works perfectly fine with 'visualization_demo/log_opt.sql'
+
+    # TODO: how to viz 2d/3d-array cells?
+    elif df[label][0].ndim == 2:    # For 2d-array
+        print('2D-array')
+        print('we cannot visualize arrays with more than one dimension')
+
+    else:
+        print('Need to add function..')
+        print('we cannot visualize arrays with more than one dimension')
+    
 
     return trace_list
 
@@ -240,7 +260,6 @@ def update_dlc_outputs(clickData):
 
     sublayout = html.Div([
         html.H5("X Channel Statistics"),
-        # dcc.RadioItems(options=['min', 'max', 'std', 'mean', 'median', 'abs', 'integrated'], value='mean', inline=True, id='x-stat-option'),
         html.Div([dbc.RadioItems(
             id='x-stat-option',
             className="btn-group",
@@ -280,21 +299,6 @@ def update_dlc_outputs(clickData):
         dcc.Dropdown(id='y-channel', options=sorted(set([multi_key[0] for idx, multi_key in enumerate(multi_indices[0])])), value=['Wind1VelY', 'Wind1VelZ'], multi=True),
         dcc.Graph(id='dlc-output', figure=empty_figure()),
     ])
-
-    '''
-    # Radio Items Option
-    sublayout = html.Div([
-        html.H5("X Channel Statistics"),
-        dcc.RadioItems(options=['min', 'max', 'std', 'mean', 'median', 'abs', 'integrated'], value='mean', inline=True, id='x-stat-option'),
-        html.H5("Y Channel Statistics"),
-        dcc.RadioItems(options=['min', 'max', 'std', 'mean', 'median', 'abs', 'integrated'], value='max', inline=True, id='y-stat-option'),
-        html.H5("X Channel"),
-        dcc.Dropdown(id='x-channel', options=sorted(set([multi_key[0] for idx, multi_key in enumerate(multi_indices[0])]))),
-        html.H5("Y Channel"),
-        dcc.Dropdown(id='y-channel', options=sorted(set([multi_key[0] for idx, multi_key in enumerate(multi_indices[0])])), multi=True),
-        dcc.Graph(id='dlc-output', figure=empty_figure()),
-    ])
-    '''
 
     return title_phrase, sublayout
 
@@ -379,7 +383,6 @@ def display_outlier(clickData):
     filename, timeseries_data = get_timeseries_data(of_run_num, stats, iteration)
     print(timeseries_data)
 
-    # return json.dumps(clickData, indent=2)
     sublayout = dcc.Loading(html.Div([
         html.H5("Channel to visualize timeseries data"),
         dcc.Dropdown(id='time-signaly', options=sorted(timeseries_data.keys()), value=['Wind1VelX', 'Wind1VelY', 'Wind1VelZ'], multi=True),
@@ -404,19 +407,7 @@ def update_timegraphs(signaly):
             name = label),
             row = 1,
             col = 1)
-    # fig.update_layout(
-    #     height=250 * len(signaly),
-    #     hovermode='x unified',
-    #     title='Convergence Trend from Optimization',
-    #     title_x=0.5)
-
-    # fig.update_traces(xaxis='x'+str(len(signaly)))   # Spike line hover extended to all subplots
-
-    # fig.update_xaxes(
-    #     spikemode='across+marker',
-    #     spikesnap='cursor',
-    #     title_text='Iteration')
-
+    
     return fig
 
 
@@ -438,23 +429,3 @@ def get_timeseries_data(run_num, stats, iteration):
     return filename, timeseries_data
 
 
-# Don't need
-def visualize_stats(stats):
-    features = ['Wind1VelX', 'Wind1VelY', 'Wind1VelZ']
-    fig = make_subplots(rows = 1, cols = 1)
-    for feature in features:
-        feature_min = stats[feature]['min']
-        feature_max = stats[feature]['max']
-        feature_std = stats[feature]['std']
-        feature_mean = stats[feature]['mean']   # (n,1) where n-runs has been implemented for optimization
-        feature_median = stats[feature]['median']
-        # logging.info(feature_mean)
-        # logging.info(feature_mean[2])       # Works (start index from 0)
-        fig.add_trace(go.Scatter(
-            y=[feature_mean[2]],
-            name = feature + '_mean')
-        )
-
-    # fig, axes = plt.subplots(nrows=len(features), sharex=True)
-
-    return fig
