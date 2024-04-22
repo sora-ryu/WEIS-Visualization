@@ -1,4 +1,4 @@
-'Main Page where we get the input file'
+'''Main Page where we get the input file'''
 
 # Import Packages
 import dash
@@ -18,23 +18,22 @@ import logging
 
 # Initialize the app - Internally starts the Flask Server
 # Incorporate a Dash Mantine theme
-# external_stylesheets = [dmc.theme.DEFAULT_COLORS]
 external_stylesheets = [dbc.themes.BOOTSTRAP]
 APP_TITLE = "WEIS Visualization APP"
 app = Dash(__name__, external_stylesheets = external_stylesheets, suppress_callback_exceptions=True, title=APP_TITLE, use_pages=True)
 
-# Build Simple Navigation Bar
+# Build Navigation Bar
+# Each pages are registered on each python script under the pages directory.
 navbar = dbc.NavbarSimple(
     children = [
         dbc.NavItem(dbc.NavLink("Home", href='/')),
         dbc.NavItem(dbc.NavLink("OpenFAST", href='/open_fast')),
         dbc.NavItem(dbc.NavLink("Optimize", href='/optimize')),
         dbc.DropdownMenu(
-            [dbc.DropdownMenuItem('Blade', href='/wisdem_blade'), dbc.DropdownMenuItem('Cost', href='/wisdem_cost')],
+            [dbc.DropdownMenuItem('Blade', href='/wisdem_blade'), dbc.DropdownMenuItem('Cost', href='/wisdem_cost'), dbc.DropdownMenuItem('General', href='/wisdem_general')],
             label="WISDEM",
             nav=True
         ),
-        # dbc.NavItem(dbc.NavLink("WISDEM", href='/wisdem')),
         dbc.NavItem(dbc.NavLink("3D Visualization", href='/3d_vis'))
     ],
     brand = APP_TITLE,
@@ -44,12 +43,12 @@ navbar = dbc.NavbarSimple(
 )
 
 # Wrap app with loading component
+# Whenever it needs some time for loading data, small progress bar would be appear in the middle of the screen.
 app.layout = dcc.Loading(
     id = 'loading_page_content',
     children = [
         html.Div(
             [
-                dcc.Store(id='store', data={}),
                 navbar,
                 dash.page_container
             ]

@@ -1,6 +1,16 @@
 '''This is the page for visualizing table and plots of OpenFAST output'''
 
+'''
+For understanding:
+Callback function - Add controls to build the interaction. Automatically run this function whenever changes detected from either Input or State. Update the output.
+'''
+
+# TODO: Need to solve following warning error - A nonexistent object was used in an `Input` of a Dash callback. The id of this object is `signalx` and the property is `value`.
+#       This is caused by the fact that 'signalx' defined in sublayout.
+
+
 # Import Packages
+import dash_bootstrap_components as dbc
 from dash import Dash, Input, Output, State, callback, dcc, html, dash_table, register_page
 from dash.exceptions import PreventUpdate
 import copy
@@ -14,7 +24,7 @@ from plotly.subplots import make_subplots
 import dash_mantine_components as dmc
 import pandas as pd
 import logging
-
+from utils.utils import *
 
 register_page(
     __name__,
@@ -23,73 +33,69 @@ register_page(
     path='/open_fast'
 )
 
-
+# We are using card container where we define sublayout with rows and cols.
 def layout():
-    layout = html.Div([
-        dcc.Upload(
-            id='upload-data', children=html.Div([
-                'Drag and Drop or ',
-                html.A('Select Files')
-            ]),
-            style={
-                'width': '100%',
-                'height': '60px',
-                'lineHeight': '60px',
-                'borderWidth': '1px',
-                'borderStyle': 'dashed',
-                'borderRadius': '5px',
-                'textAlign': 'center',
-                'margin': '10px'
-            },
-            # multiple=True         # Allow multiple files to be uploaded
-        ),
-        dcc.Loading(html.Div(id='output-data-upload')),
-        dcc.Loading(html.Div(id='openfast-div'))
-    ])
+    file_upload_layout = dcc.Upload(
+                            id='upload-data', children=html.Div([
+                                'Drag and Drop or ',
+                                html.A('Select Files')
+                            ]),
+                            style={
+                                'width': '100%',
+                                'height': '60px',
+                                'lineHeight': '60px',
+                                'borderWidth': '1px',
+                                'borderStyle': 'dashed',
+                                'borderRadius': '5px',
+                                'textAlign': 'center',
+                                'margin': '10px'
+                            },
+                            # multiple=True         # Allow multiple files to be uploaded
+                        )
+    
+    layout = dbc.Row([
+                # Data to share over functions
+                dcc.Store(id='store', data={}),
+                # Starts with Pop-up window
+                dbc.Modal([
+                    dbc.ModalHeader(dbc.ModalTitle('File Upload')),
+                    dbc.ModalBody(file_upload_layout)],
+                    id='upload-div',
+                    size='xl',
+                    is_open=True
+                ),
+                # Left column is for description layout
+                dbc.Col(dcc.Loading(html.Div(id='output-data-upload')), width=4),        # related function: show_data_contents(), analyze()
+                # Right column is for graph layout
+                dbc.Col(dcc.Loading(html.Div(id='graph-div')), width=8)                  # related function: draw_graphs()
+            ])
+    
     return layout
 
-def parse_contents(contents, filename, date):
-    content_type, content_string = contents.split(',')
-    decoded = base64.b64decode(content_string)
-    try:
-        df = pd.read_csv(io.StringIO(decoded.decode('utf-8')), skiprows=[0,1,2,3,4,5,7], delim_whitespace=True)
-        data=df.to_dict('records')
-    except Exception as e:
-        print(e)
-        return html.Div([
-            'There is some error on processing this file..'
-        ]), {}
-    
-    return html.Div([
-        html.H5(f'File name: {filename}'),
-        html.H6(f'Date: {datetime.datetime.fromtimestamp(date)}'),
 
-        dash_table.DataTable(
-            data=data,
-            columns=[{'name': i, 'id': i} for i in df.columns],
-            page_size=10
-        )
-        # html.Div(id='page-content', children=[])
-        # For debugging, display the raw contents provided by the web browser
-        # html.Div('Raw Content'),
-        # html.Pre(contents[0:200] + '...', style={
-        #     'whiteSpace': 'pre-wrap',
-        #     'wordBreak': 'break-all'
-        # })
+@callback(Output('upload-div', 'is_open'),
+          Input('upload-data', 'contents'),
+          State('upload-div', 'is_open'))
+def toggle_modal(n1, is_open):
+    '''
+    Once we get the file selected from the user (upload-data), close the pop-up window (upload-div)
+    '''
+    return toggle(n1, is_open)
 
-    ]), data
 
 
 @callback(Output('store', 'data'),
           Input('upload-data', 'contents'))
 def get_data(contents):
+    '''
+    Once we get the file selected from the user (upload-data), parse the data and saved it as 'store' id.
+    '''
     if contents is not None:
-        # Store data in a dcc.Store in app.py
         content_type, content_string = contents.split(',')
         decoded = base64.b64decode(content_string)
         df = pd.read_csv(io.StringIO(decoded.decode('utf-8')), skiprows=[0,1,2,3,4,5,7], delim_whitespace=True)
-        return df.to_dict('records')
 
+        return df.to_dict('records')
 
 
 @callback(Output('output-data-upload', 'children'),
@@ -97,20 +103,29 @@ def get_data(contents):
           State('upload-data', 'filename'),
           State('upload-data', 'last_modified'))
 def show_data_contents(store, name, date):
-
+    '''
+    Once we parse the data from get_deta(), add the sublayout to the main layout where the div is defined as (output-data-upload).
+    Hence, show the filename and table for the description layout.
+    '''
     df = pd.DataFrame(store)
 
     if name is not None:
-        return html.Div([
-            html.H5(f'File name: {name}'),
-            html.H6(f'Date: {datetime.datetime.fromtimestamp(date)}'),
-
-            dash_table.DataTable(
-                data=store,
-                columns=[{'name': i, 'id': i} for i in df.columns],
-                page_size=10
-            )
-        ])
+        table_layout = dbc.Card(
+                        [
+                            dbc.CardHeader(f'File name: {name}', className='cardHeader'),
+                            dcc.Loading(dbc.CardBody([
+                                    html.H5(f'Date: {datetime.datetime.fromtimestamp(date)}'),
+                                    dash_table.DataTable(
+                                        data=store,
+                                        columns=[{'name': i, 'id': i} for i in df.columns],
+                                        fixed_columns = {'headers': True, 'data': 1},
+                                        page_size=10,
+                                        style_table={'height': '300px', 'overflowX': 'auto', 'overflowY': 'auto'}),
+                                    html.Div(id='openfast-div')
+                            ]))
+                        ], className='divBorder')
+        
+        return table_layout
     
 
 @callback(
@@ -118,7 +133,11 @@ def show_data_contents(store, name, date):
         Input('store', 'data')
 )
 def analyze(store):
-    if store == {}:        # Nothing happens if data is not uploaded yet..
+    '''
+    Once we parse the data from get_deta(), add the sublayout to the main layout where the div is defined as (output-data-upload).
+    Hence, add channels/dropdown lists for the description layout.
+    '''
+    if store == {}:        # Prevent this function to be called when data is not uploaded yet
         logging.warning(f"Upload data first..")
         raise PreventUpdate
 
@@ -129,54 +148,40 @@ def analyze(store):
             [
                 html.H5("Signal-y"),
                 dcc.Dropdown(
-                    id="signaly", options=sorted(df.keys()), value=['Wind1VelX', 'Wind1VelY', 'Wind1VelZ'], multi=True         # options look like ['Azimuth', 'B1N1Alpha', ...]
-                ),
+                    id='signaly', options=sorted(df.keys()), value=['Wind1VelX', 'Wind1VelY', 'Wind1VelZ'], multi=True),          # options look like ['Azimuth', 'B1N1Alpha', ...]. select ['Wind1VelX', 'Wind1VelY', 'Wind1VelZ'] as default value
                 html.H5("Signal-x"),
                 dcc.Dropdown(
-                    id="signalx", options=sorted(df.keys()), value='Time'
-                ),
+                    id='signalx', options=sorted(df.keys()), value='Time'),                                                       # select 'Time' as default value
                 html.Br(),
                 html.H5("Plot Options"),
                 dcc.RadioItems(
-                    options=['single plot', 'multiple plot'], value='single plot', inline=True, id='plotOption'
-                ),
-                html.Br(),
-                dcc.Graph(id="line", figure=empty_figure())
+                    id='plotOption', options=['single plot', 'multiple plot'], value='single plot', inline=True)                  # Select 'single plot' as default value
             ]
         )
 
-def empty_figure():
-    '''
-    Draw empty figure showing nothing once initialized
-    '''
-    fig = go.Figure(go.Scatter(x=[], y=[]))
-    fig.update_layout(template=None)
-    fig.update_xaxes(showgrid=False, showticklabels=False, zeroline=False)
-    fig.update_yaxes(showgrid=False, showticklabels=False, zeroline=False)
-
-    return fig
-
-# Add controls to build the interaction
 @callback(
-    Output(component_id="line", component_property="figure"),
-    Input(component_id="signalx", component_property="value"),
-    [Input(component_id="signaly", component_property="value")],
-    Input(component_id="plotOption", component_property="value"),
+    Output('graph-div', 'children'),
+    Input('signalx', 'value'),
+    [Input('signaly', 'value')],
+    Input('plotOption', 'value'),
     Input('store', 'data')
 )
 def draw_graphs(signalx, signaly, plotOption, store):
+    '''
+    Whenever signalx, signaly, plotOption has been entered, draw the graph.
+    Create figure with that setting and add that figure to the graph layout.
+    Note that we set default settings (see analyze() function), it will show corresponding default graph.
+    You can dynamically change signalx, signaly, plotOption, and it will automatically update the graph.
+    '''
 
-    # fig = tls.make_subplots(rows=1, cols=1, shared_xaxes=True, verical_spacing=0.009, horizontal_spacing=0.009)
-    # fig = go.Figure()
-
-    # if (signalx is None) or (signaly == []):        # Do not update the graph
-    #     raise PreventUpdate
-    
-    if store is None:
+    # If something missing, don't call this function (= don't draw the figure)
+    if store is None or signalx is None or signaly is None or plotOption is None:
         raise PreventUpdate
-
+    
     else:
         df = pd.DataFrame(store)
+
+        # Put all traces in one single plot
         if plotOption == 'single plot':
             fig = make_subplots(rows = 1, cols = 1)
             for col_idx, label in enumerate(signaly):
@@ -188,6 +193,7 @@ def draw_graphs(signalx, signaly, plotOption, store):
                     row = 1,
                     col = 1)
 
+        # Put each traces in each separated horizontally aligned subplots
         elif plotOption == 'multiple plot':
             fig = make_subplots(rows = 1, cols = len(signaly))
 
@@ -200,4 +206,15 @@ def draw_graphs(signalx, signaly, plotOption, store):
                     row = 1,
                     col = col_idx + 1)
         
-        return fig
+        # Define the graph layout where it includes the rendered figure
+        graph_layout = dbc.Card(
+                            [
+                                dbc.CardHeader("Graphs", className='cardHeader'),
+                                dbc.CardBody([
+                                    dcc.Graph(figure=fig)
+                                ])
+                            ], className='divBorder')
+        
+        return graph_layout
+        
+

@@ -4,6 +4,9 @@
 For understanding:
 Callback function - Add controls to build the interaction. Automatically run this function whenever changes detected from either Input or State. Update the output.
 '''
+# TODO: Choose a folder either OpenFAST opt output or RAFT opt output
+# TODO: Find alternatives to Global variables
+# TODO: Reusable fig creation function?
 
 # Import Packages
 import dash_bootstrap_components as dbc
@@ -33,94 +36,6 @@ register_page(
 )
 
 
-def load_OMsql(log):
-    """
-    Function from :
-    https://github.com/WISDEM/WEIS/blob/main/examples/09_design_of_experiments/postprocess_results.py
-    """
-    # logging.info("loading ", log)
-    cr = om.CaseReader(log)
-    rec_data = {}
-    cases = cr.get_cases('driver')
-    for case in cases:
-        for key in case.outputs.keys():
-            if key not in rec_data:
-                rec_data[key] = []
-            rec_data[key].append(case[key])
-    
-    return rec_data
-
-
-def parse_contents(data):
-    """
-    Function from:
-    https://github.com/WISDEM/WEIS/blob/main/examples/09_design_of_experiments/postprocess_results.py
-    """
-    collected_data = {}
-    for key in data.keys():
-        if key not in collected_data.keys():
-            collected_data[key] = []
-        
-        for key_idx, _ in enumerate(data[key]):
-            if isinstance(data[key][key_idx], int):
-                collected_data[key].append(np.array(data[key][key_idx]))
-            elif len(data[key][key_idx]) == 1:
-                try:
-                    collected_data[key].append(np.array(data[key][key_idx][0]))
-                except:
-                    collected_data[key].append(np.array(data[key][key_idx]))
-            else:
-                collected_data[key].append(np.array(data[key][key_idx]))
-    
-    df = pd.DataFrame.from_dict(collected_data)
-
-    return df
-
-
-def load_yaml(fname_input, package=0):
-    """
-    Function from:
-    https://github.com/WISDEM/WEIS/blob/main/weis/aeroelasticse/FileTools.py
-    """
-    if package == 0:
-        with open(fname_input) as f:
-            data = yaml.safe_load(f)
-        return data
-
-    elif package == 1:
-        with open(fname_input, 'r') as myfile:
-            text_input = myfile.read()
-        myfile.close()
-        ryaml = ry.YAML()
-        return dict(ryaml.load(text_input))
-
-
-def read_cm(cm_file):
-    """
-    Function from:
-    https://github.com/WISDEM/WEIS/blob/main/examples/16_postprocessing/rev_DLCs_WEIS.ipynb
-
-    Parameters
-    __________
-    cm_file : The file path for case matrix
-
-    Returns
-    _______
-    cm : The dataframe of case matrix
-    dlc_inds : The indices dictionary indicating where corresponding dlc is used for each run
-    """
-    cm_dict = load_yaml(cm_file, package=1)
-    cnames = []
-    for c in list(cm_dict.keys()):
-        if isinstance(c, ry.comments.CommentedKeySeq):
-            cnames.append(tuple(c))
-        else:
-            cnames.append(c)
-    cm = pd.DataFrame(cm_dict, columns=cnames)
-    
-    return cm
-
-
 def read_log(log_file_path):
     global df       # set the dataframe as a global variable to access it from the get_trace() function.
     log_data = load_OMsql(log_file_path)
@@ -128,46 +43,64 @@ def read_log(log_file_path):
     # df.to_csv('RAFT/log_opt.csv', index=False)
 
 
+# We are using card container where we define sublayout with rows and cols.
 def layout():
     # log_file_path = 'visualization_demo/log_opt.sql'
     log_file_path = 'RAFT/log_opt.sql'
     read_log(log_file_path)
+    
+    # Layout for visualizing Conv-trend data
+    convergence_layout = dbc.Card(
+                            [
+                                dbc.CardHeader('Convergence trend data', className='cardHeader'),
+                                dbc.CardBody([
+                                    dcc.Loading(
+                                        html.Div([
+                                            html.H5('Select Y-channel:'),
+                                            dcc.Dropdown(id='signaly', options=sorted(df.keys()), multi=True),      # Get 'signaly' channels from user. Related function: update_graphs()
+                                            dcc.Graph(id='conv-trend', figure=empty_figure()),                      # Initialize with empty figure and update with 'update-graphs() function'. Related function: update_graphs()
+                                        ])
+                                    )
+                                ])
+                            ], className='divBorder')
 
+    # Layout for visualizing Specific Iteration data - hidden in default
+    iteration_with_dlc_layout = dbc.Collapse(
+                                    dbc.Card([
+                                            dbc.CardHeader(id='dlc-output-iteration', className='cardHeader'),      # Related function: update_dlc_outputs()
+                                            dbc.CardBody([
+                                                dcc.Loading(html.Div(id='dlc-iteration-data'))                      # Related function: update_dlc_outputs()
+                                            ])], className='divBorder'),
+                                    id = 'collapse',
+                                    is_open=False)
+    
 
-    # Layout UI will be updated with Card Container later..
-    layout = html.Div([
-        
-        # Visualize Conv-trend data
-        html.Div([
-            html.H5('Y-Channel to visualize from Convergence trend data'),
-            dcc.Dropdown(id='signaly', options=sorted(df.keys()), multi=True),      # Get 'signaly' from
-            dcc.Graph(id='conv-trend', figure=empty_figure()),                      # Initialize with empty figure and update with 'update-graphs() function'
-        ], style = {'width': '49%', 'display': 'inline-block', 'margin-left': '15px'}),
+    layout = dbc.Row([
+                dbc.Col(convergence_layout, width=6),
+                dbc.Col(iteration_with_dlc_layout, width=6),
 
-        # Visualize Specific Iteration data
-        html.Div(dcc.Loading(html.Div([
-            html.H3(id='dlc-output-iteration', style={'textAlign':'center'}),       
-            html.Div(id='dlc-iteration-data'),
-        ])), style = {'width': '49%', 'display': 'inline-block', 'margin-left': '15px'}),
-
-        # Visualize Outlier timeseries data with modal
-        dcc.Loading(dbc.Modal([
-            dbc.ModalHeader(dbc.ModalTitle(html.Div(id='outlier-header'))),
-            dbc.ModalBody(html.Div(id='outlier'))],
-            id='outlier-div',
-            size='xl',
-            is_open=False
-        ))
+                # Modal Window layout for visualizing Outlier timeseries data
+                dcc.Loading(dbc.Modal([
+                    dbc.ModalHeader(dbc.ModalTitle(html.Div(id='outlier-header'))),                                 # Related function: display_outlier()
+                    dbc.ModalBody(html.Div(id='outlier'))],                                                         # Related function: display_outlier()
+                    id='outlier-div',
+                    size='xl',
+                    is_open=False))
     ])
 
     return layout
 
 
+
+###############################################
+#   Convergence trend data related functions
+###############################################
+
 def get_trace(label):
     '''
-    Add the line graph (trace) for each channel
+    Add the line graph (trace) for each channel (label)
     '''
-    assert isinstance(df[label][0], np.ndarray) == True     # The cell should be numpy array either 2.303915527330266 with size 1 or [0.01905484 0.46378144 0.46889754 0.4688218  0.         0.] with size 6
+    assert isinstance(df[label][0], np.ndarray) == True
     trace_list = []
     print(f'{label}:')
     print(df[label])
@@ -202,17 +135,19 @@ def get_trace(label):
 @callback(Output('conv-trend', 'figure'),
           Input('signaly', 'value'))
 def update_graphs(signaly):
-
+    '''
+    Draw figures showing convergence trend with selected channels
+    '''
     if signaly is None:
         raise PreventUpdate
 
+    # Add subplots for multiple y-channels vertically
     fig = make_subplots(
         rows = len(signaly),
         cols = 1,
         shared_xaxes=True,
         vertical_spacing=0.05)
 
-    # Add traces
     for row_idx, label in enumerate(signaly):
         trace_list = get_trace(label)
         for trace in trace_list:
@@ -235,29 +170,47 @@ def update_graphs(signaly):
     return fig
 
 
+
+###############################################
+# DLC related functions
+###############################################
+
+@callback(Output('collapse', 'is_open'),
+          Input('conv-trend', 'clickData'),
+          State('collapse', 'is_open'))
+def toggle_iteration_with_dlc_layout(clickData, is_open):
+    '''
+    If iteration has been clicked, open the card layout on right side.
+    '''
+    return toggle(clickData, is_open)
+
+
 @callback(Output('dlc-output-iteration', 'children'),
           Output('dlc-iteration-data', 'children'),
           Input('conv-trend', 'clickData'))
 def update_dlc_outputs(clickData):
-
+    '''
+    Once iteration has been clicked from the left convergence graph, analyze:
+    1) What # of iteration has been clicked
+    2) Corresponding iteration related optimization output files
+    '''
     if clickData is None:
         raise PreventUpdate
     
-    global iteration
+    global iteration, stats, cm
     iteration = clickData['points'][0]['x']
     title_phrase = f'DLC Analysis on Iteration {iteration}'
+
+    # TODO: won't need this once set up with file tree
     if not iteration in [0, 1, 51]:
         return title_phrase, html.Div([html.H5("Please select other iteration..")])
     
-    global stats
-    global cm
     stats = read_per_iteration(iteration)
     case_matrix_path = 'visualization_demo/openfast_runs/rank_0/case_matrix.yaml'
     cm = read_cm(case_matrix_path)
-    # fig = plot_dlc(cm, stats)
-
     multi_indices = sorted(stats.reset_index().keys()),
 
+    # Define sublayout that includes user customized panel for visualizing DLC analysis
     sublayout = html.Div([
         html.H5("X Channel Statistics"),
         html.Div([dbc.RadioItems(
@@ -297,19 +250,10 @@ def update_dlc_outputs(clickData):
         dcc.Dropdown(id='x-channel', options=sorted(set([multi_key[0] for idx, multi_key in enumerate(multi_indices[0])])), value='Wind1VelX'),
         html.H5("Y Channel"),
         dcc.Dropdown(id='y-channel', options=sorted(set([multi_key[0] for idx, multi_key in enumerate(multi_indices[0])])), value=['Wind1VelY', 'Wind1VelZ'], multi=True),
-        dcc.Graph(id='dlc-output', figure=empty_figure()),
+        dcc.Graph(id='dlc-output', figure=empty_figure()),                          # Related functions: update_dlc_plot()
     ])
 
     return title_phrase, sublayout
-
-
-def read_per_iteration(iteration):
-    iteration_path = 'visualization_demo/openfast_runs/rank_0/iteration_{}'.format(iteration)
-    stats = pd.read_pickle(iteration_path+'/summary_stats.p')
-    dels = pd.read_pickle(iteration_path+'/DELs.p')
-    fst_vt = pd.read_pickle(iteration_path+'/fst_vt.p')
-
-    return stats
 
 
 @callback(Output('dlc-output', 'figure'),
@@ -318,6 +262,10 @@ def read_per_iteration(iteration):
           Input('x-channel', 'value'),
           Input('y-channel', 'value'))
 def update_dlc_plot(x_chan_option, y_chan_option, x_channel, y_channel):
+    '''
+    Once required channels and stats options have been selected, draw figures that demonstrate DLC analysis.
+    It will show default figure with default settings.
+    '''
     if stats is None or x_channel is None or y_channel is None:
         raise PreventUpdate
 
@@ -330,7 +278,7 @@ def plot_dlc(cm, stats, x_chan_option, y_chan_option, x_channel, y_channels):
     Function from:
     https://github.com/WISDEM/WEIS/blob/main/examples/16_postprocessing/rev_DLCs_WEIS.ipynb
 
-    Plot channel maxima vs mean wind speed for each DLC - channel: user specify
+    Plot user specified stats option for each DLC over user specified channels
     '''
     dlc_inds = {}
 
@@ -338,7 +286,7 @@ def plot_dlc(cm, stats, x_chan_option, y_chan_option, x_channel, y_channels):
     for dlc in dlcs:
         dlc_inds[dlc] = cm[('DLC', 'Label')] == dlc     # dlcs- key: dlc / value: boolean array
     
-
+    # Add subplots for multiple y-channels vertically
     fig = make_subplots(
         rows = len(y_channels),
         cols = 1,
@@ -359,19 +307,28 @@ def plot_dlc(cm, stats, x_chan_option, y_chan_option, x_channel, y_channels):
     
     return fig
 
+
+###############################################
+# Outlier related functions
+###############################################
+
 @callback(Output('outlier-div', 'is_open'),
           Input('dlc-output', 'clickData'),
           State('outlier-div', 'is_open'))
-def toggle_modal(n1, is_open):
-    if n1:
-        return not is_open
-    return is_open
+def toggle_outlier_timeseries_layout(clickData, is_open):
+    '''
+    Once user assumes a point as outlier and click that point, open the modal window showing the corresponding time series data.
+    '''
+    return toggle(clickData, is_open)
+
 
 @callback(Output('outlier-header', 'children'),
           Output('outlier', 'children'),
           Input('dlc-output', 'clickData'))
 def display_outlier(clickData):
-
+    '''
+    Once outlier has been clicked, show corresponding optimization run.
+    '''
     if clickData is None:
         raise PreventUpdate
     
@@ -391,10 +348,13 @@ def display_outlier(clickData):
 
     return filename, sublayout
 
+
 @callback(Output('time-graph', 'figure'),
           Input('time-signaly', 'value'))
 def update_timegraphs(signaly):
-
+    '''
+    Function to visualize the time series data graph
+    '''
     if signaly is None:
         raise PreventUpdate
 
@@ -409,23 +369,5 @@ def update_timegraphs(signaly):
             col = 1)
     
     return fig
-
-
-def get_timeseries_data(run_num, stats, iteration):
-    
-    stats = stats.reset_index()     # make 'index' column that has elements of 'IEA_22_Semi_00, ...'
-    print("stats\n", stats)
-    filename = stats.loc[run_num, 'index'].to_string()      # filenames are not same - stats: IEA_22_Semi_83 / timeseries/: IEA_22_Semi_0_83.p
-    if filename.split('_')[-1].startswith('0'):
-        filename = ('_'.join(filename.split('_')[:-1])+'_0_'+filename.split('_')[-1][1:]+'.p').strip()
-    else:
-        filename = ('_'.join(filename.split('_')[:-1])+'_0_'+filename.split('_')[-1]+'.p').strip()
-    
-    # visualization_demo/openfast_runs/rank_0/iteration_0/timeseries/IEA_22_Semi_0_0.p
-    timeseries_path = 'visualization_demo/openfast_runs/rank_0/iteration_{}/timeseries/{}'.format(iteration, filename)
-    print('timeseries_path:\n', timeseries_path)
-    timeseries_data = pd.read_pickle(timeseries_path)
-
-    return filename, timeseries_data
 
 

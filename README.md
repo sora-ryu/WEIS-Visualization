@@ -64,7 +64,10 @@ WEIS Output/
 - [x] Implement Optimization page - DLC/OpenFAST statistics
 - [x] Implement Optimization page - outlier DLC with OpenFAST time-series with modal window
 - [x] Implement Optimization page - update layout to handle a bunch of plots
-- [ ] Implement WISDEM Viz page - blade
+- [x] Implement WISDEM Viz page - blade
+
+## Quarter 3
 - [ ] Implement WISDEM Viz page - cost
+- [ ] Implement WISDEM Viz page - general
 - [ ] Implement WISDEM Viz page - doc for customized viz function
-- [ ] Overall Layout Design with Theme / Typography / Button CSS
+- [ ] Improve UI - drag and drop card

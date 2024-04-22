@@ -27,18 +27,6 @@ register_page(
 
 
 def layout():
-    # Read pickle file
-    # refturb, _, _ = load_wisdem("/Users/sryu/Desktop/FY24/WEIS/WISDEM/examples/02_reference_turbines/outputs/refturb_output.pkl")   # openmdao object
-    # tree = refturb.model.list_outputs()
-    # print('refturb\n', tree)
-
-    # Read csv file
-    # global refturb_variables
-    # filepath = "/Users/sryu/Desktop/FY24/WEIS/WISDEM/examples/02_reference_turbines/outputs/refturb_output.csv"
-    # refturb = pd.read_csv(filepath)
-    # refturb_variables = refturb.set_index('variables').to_dict('index')
-    # # print("df variables\n", df_variables)   # e.g., ['tower_grid.length': {'units': 'm', 'values': '[87.7]', 'description': 'Scalar of the tower length computed along its curved axis. A standard straight tower will be as high as long.'}, ...]
-
     # Read numpy file
     global refturb, refturb_variables
     npz_filepath = "/Users/sryu/Desktop/FY24/WEIS/WISDEM/examples/02_reference_turbines/outputs/refturb_output.npz"
@@ -51,31 +39,45 @@ def layout():
     ys = ['rotorse.rc.chord_m', 'rotorse.re.pitch_axis', 'rotorse.theta_deg']       # channel name at npz
     ys_struct_log = ['rotorse.EA_N', 'rotorse.EIxx_N*m**2', 'rotorse.EIyy_N*m**2', 'rotorse.GJ_N*m**2']
     ys_struct = ['rotorse.rhoA_kg/m']
+
+    description_layout = dbc.Card(
+                            [
+                                dbc.CardHeader("Blade channels description", className='cardHeader'),
+                                dbc.CardBody([
+                                    dcc.Loading(html.P(children=get_description([x]+ys+ys_struct+ys_struct_log)))
+                                ])
+                            ], className='divBorder')
     
-    layout = html.Div([
-        dbc.Card(
-            dbc.CardBody([
-                dbc.Row([
-                    html.B("Blade property channels with description"),
-                    dcc.Loading(html.P(children=get_description([x]+ys+ys_struct+ys_struct_log)))
-                ]),
-                dbc.Row([
-                    dbc.Col([
-                        dcc.Loading(dcc.Graph(figure=draw_blade_shape(x, ys, ys_struct, ys_struct_log)))
-                    ]),
-                    dbc.Col([
-                        dcc.Loading(dcc.Graph(figure=draw_blade_structure(x, ys, ys_struct, ys_struct_log)))
-                    ])
-                ])
+    plots1_layout = dbc.Card(
+                        [
+                            dbc.CardHeader('Blade Shape Properties', className='cardHeader'),
+                            dbc.CardBody([
+                                dcc.Loading(dcc.Graph(figure=draw_blade_shape(x, ys))),
+                            ])
+                        ], className='divBorder')
+    plots2_layout = dbc.Card(
+                        [
+                            dbc.CardHeader('Blade Structure Properties', className='cardHeader'),
+                            dbc.CardBody([
+                                dcc.Loading(dcc.Graph(figure=draw_blade_structure(x, ys_struct, ys_struct_log))),
+                            ])
+                        ], className='divBorder')
+
+    layout = dbc.Row([
+                dbc.Col(description_layout, width=3),
+                dbc.Col([
+                    dbc.Row(plots1_layout),
+                    dbc.Row(plots2_layout)
+                ], width=8)
             ])
-        )
-    ])
+    
+
     return layout
 
 
 def get_description(channel_list):
     des_list = []
-    # Where channel names are saved differently..
+    # Need to specify where channel names are saved differently..
     npz_to_csv = {'rotorse.rc.chord_m': 'rotorse.rc.chord', 'rotorse.theta_deg': 'rotorse.theta', 'rotorse.EA_N': 'rotorse.EA', 'rotorse.EIxx_N*m**2': 'rotorse.EIxx', 'rotorse.EIyy_N*m**2': 'rotorse.EIyy', 'rotorse.GJ_N*m**2': 'rotorse.GJ', 'rotorse.rhoA_kg/m': 'rotorse.rhoA'}
     for chan in channel_list:
         if chan in npz_to_csv.keys():
@@ -96,7 +98,7 @@ def get_description(channel_list):
 
 
 
-def draw_blade_shape(x, ys, ys_struct, ys_struct_log):
+def draw_blade_shape(x, ys):
     
     fig = make_subplots(rows = 2, cols = 1, shared_xaxes=True)
 
@@ -119,13 +121,15 @@ def draw_blade_shape(x, ys, ys_struct, ys_struct_log):
                 col = 1)
         
     
+    fig.update_layout(plot_bgcolor='white')
+    fig.update_xaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
+    fig.update_yaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
     fig.update_xaxes(title_text=f'rotorse.rc.s', row=2, col=1)
-    fig.update_layout(title='Blade properties')
     
     return fig
 
 
-def draw_blade_structure(x, ys, ys_struct, ys_struct_log):
+def draw_blade_structure(x, ys_struct, ys_struct_log):
 
     fig = make_subplots(specs=[[{"secondary_y": True}], [{"secondary_y": False}]], rows=2, cols=1, shared_xaxes=True)
     for y in ys_struct:
@@ -145,12 +149,15 @@ def draw_blade_structure(x, ys, ys_struct, ys_struct_log):
             secondary_y=True,
             row = 1,
             col = 1)
-    
+
+    fig.update_layout(plot_bgcolor='white')
+    fig.update_xaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
+    fig.update_yaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
     fig.update_yaxes(type="log", secondary_y=True)
-    fig.update_xaxes(title_text=f'rotorse.rc.s', row=2, col=1)
     fig.update_yaxes(title_text="<b>primary</b> yaxis title", secondary_y=False)
     fig.update_yaxes(title_text="<b>secondary</b> yaxis title with log", secondary_y=True)
-    fig.update_layout(title='Blade Structure Properties')
+    fig.update_xaxes(title_text=f'rotorse.rc.s', row=2, col=1)
+
 
     return fig
 
