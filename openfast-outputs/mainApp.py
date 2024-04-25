@@ -48,7 +48,8 @@ app.layout = dcc.Loading(
     id = 'loading_page_content',
     children = [
         html.Div(
-            [
+            [   # Variable Settings to share over pages
+                dcc.Store(id='input-dict', data={}),
                 navbar,
                 dash.page_container
             ]

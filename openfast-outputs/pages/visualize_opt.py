@@ -7,6 +7,7 @@ Callback function - Add controls to build the interaction. Automatically run thi
 # TODO: Choose a folder either OpenFAST opt output or RAFT opt output
 # TODO: Find alternatives to Global variables
 # TODO: Reusable fig creation function?
+# TODO: Save changed variable settings into input yaml file again
 
 # Import Packages
 import dash_bootstrap_components as dbc
@@ -36,33 +37,55 @@ register_page(
 )
 
 
+@callback(Output('var-opt', 'data'),
+          Input('input-dict', 'data'))
+def read_variables(input_dict):
+    # TODO: Redirect to the home page when missing input yaml file
+    if input_dict is None or input_dict == {}:
+        raise PreventUpdate
+    
+    opt_options = {}
+    opt_options['conv_y'] = input_dict['userPreferences']['opt_conv_yaxis']
+    opt_options['x_stat'] = input_dict['userPreferences']['opt_xaxis_stat']
+    opt_options['y_stat'] = input_dict['userPreferences']['opt_yaxis_stat']
+    opt_options['x'] = input_dict['userPreferences']['opt_xaxis']
+    opt_options['y'] = input_dict['userPreferences']['opt_yaxis']
+    opt_options['y_time'] = input_dict['userPreferences']['opt_time_yaxis']
+
+    return opt_options
+
+
 def read_log(log_file_path):
     global df       # set the dataframe as a global variable to access it from the get_trace() function.
     log_data = load_OMsql(log_file_path)
     df = parse_contents(log_data)
     # df.to_csv('RAFT/log_opt.csv', index=False)
 
+@callback(Output('conv-layout', 'children'),
+          Input('var-opt', 'data'))
+def define_convergence_layout(opt_options):
+    # Layout for visualizing Conv-trend data
+    convergence_layout = dbc.Card(
+                        [
+                            dbc.CardHeader('Convergence trend data', className='cardHeader'),
+                            dbc.CardBody([
+                                dcc.Loading(
+                                    html.Div([
+                                        html.H5('Select Y-channel:'),
+                                        dcc.Dropdown(id='signaly', options=sorted(df.keys()), value = opt_options['conv_y'], multi=True),      # Get 'signaly' channels from user. Related function: update_graphs()
+                                        dcc.Graph(id='conv-trend', figure=empty_figure()),                      # Initialize with empty figure and update with 'update-graphs() function'. Related function: update_graphs()
+                                    ])
+                                )
+                            ])
+                        ], className='divBorder')
+    
+    return convergence_layout
 
 # We are using card container where we define sublayout with rows and cols.
 def layout():
-    # log_file_path = 'visualization_demo/log_opt.sql'
-    log_file_path = 'RAFT/log_opt.sql'
+    log_file_path = 'visualization_demo/log_opt.sql'
+    # log_file_path = 'RAFT/log_opt.sql'
     read_log(log_file_path)
-    
-    # Layout for visualizing Conv-trend data
-    convergence_layout = dbc.Card(
-                            [
-                                dbc.CardHeader('Convergence trend data', className='cardHeader'),
-                                dbc.CardBody([
-                                    dcc.Loading(
-                                        html.Div([
-                                            html.H5('Select Y-channel:'),
-                                            dcc.Dropdown(id='signaly', options=sorted(df.keys()), multi=True),      # Get 'signaly' channels from user. Related function: update_graphs()
-                                            dcc.Graph(id='conv-trend', figure=empty_figure()),                      # Initialize with empty figure and update with 'update-graphs() function'. Related function: update_graphs()
-                                        ])
-                                    )
-                                ])
-                            ], className='divBorder')
 
     # Layout for visualizing Specific Iteration data - hidden in default
     iteration_with_dlc_layout = dbc.Collapse(
@@ -76,7 +99,9 @@ def layout():
     
 
     layout = dbc.Row([
-                dbc.Col(convergence_layout, width=6),
+                # Optimization related Data fetched from input-dict
+                dcc.Store(id='var-opt', data={}),
+                dbc.Col(id='conv-layout', width=6),
                 dbc.Col(iteration_with_dlc_layout, width=6),
 
                 # Modal Window layout for visualizing Outlier timeseries data
@@ -187,14 +212,15 @@ def toggle_iteration_with_dlc_layout(clickData, is_open):
 
 @callback(Output('dlc-output-iteration', 'children'),
           Output('dlc-iteration-data', 'children'),
-          Input('conv-trend', 'clickData'))
-def update_dlc_outputs(clickData):
+          Input('conv-trend', 'clickData'),
+          Input('var-opt', 'data'))
+def update_dlc_outputs(clickData, opt_options):
     '''
     Once iteration has been clicked from the left convergence graph, analyze:
     1) What # of iteration has been clicked
     2) Corresponding iteration related optimization output files
     '''
-    if clickData is None:
+    if clickData is None or opt_options is None:
         raise PreventUpdate
     
     global iteration, stats, cm
@@ -227,7 +253,7 @@ def update_dlc_outputs(clickData):
                 {'label': 'median', 'value': 'median'},
                 {'label': 'abs', 'value': 'abs'},
                 {'label': 'integrated', 'value': 'integrated'}],
-            value='min'
+            value=opt_options['x_stat']
         )], className='radio-group'),
         html.H5("Y Channel Statistics"),
         html.Div([dbc.RadioItems(
@@ -244,12 +270,12 @@ def update_dlc_outputs(clickData):
                 {'label': 'median', 'value': 'median'},
                 {'label': 'abs', 'value': 'abs'},
                 {'label': 'integrated', 'value': 'integrated'}],
-            value='min'
+            value=opt_options['y_stat']
         )], className='radio-group'),
         html.H5("X Channel"),
-        dcc.Dropdown(id='x-channel', options=sorted(set([multi_key[0] for idx, multi_key in enumerate(multi_indices[0])])), value='Wind1VelX'),
+        dcc.Dropdown(id='x-channel', options=sorted(set([multi_key[0] for idx, multi_key in enumerate(multi_indices[0])])), value=opt_options['x']),
         html.H5("Y Channel"),
-        dcc.Dropdown(id='y-channel', options=sorted(set([multi_key[0] for idx, multi_key in enumerate(multi_indices[0])])), value=['Wind1VelY', 'Wind1VelZ'], multi=True),
+        dcc.Dropdown(id='y-channel', options=sorted(set([multi_key[0] for idx, multi_key in enumerate(multi_indices[0])])), value=opt_options['y'], multi=True),
         dcc.Graph(id='dlc-output', figure=empty_figure()),                          # Related functions: update_dlc_plot()
     ])
 
@@ -324,12 +350,13 @@ def toggle_outlier_timeseries_layout(clickData, is_open):
 
 @callback(Output('outlier-header', 'children'),
           Output('outlier', 'children'),
-          Input('dlc-output', 'clickData'))
-def display_outlier(clickData):
+          Input('dlc-output', 'clickData'),
+          Input('var-opt', 'data'))
+def display_outlier(clickData, opt_options):
     '''
     Once outlier has been clicked, show corresponding optimization run.
     '''
-    if clickData is None:
+    if clickData is None or opt_options is None:
         raise PreventUpdate
     
     print("clickData\n", clickData)
@@ -342,7 +369,7 @@ def display_outlier(clickData):
 
     sublayout = dcc.Loading(html.Div([
         html.H5("Channel to visualize timeseries data"),
-        dcc.Dropdown(id='time-signaly', options=sorted(timeseries_data.keys()), value=['Wind1VelX', 'Wind1VelY', 'Wind1VelZ'], multi=True),
+        dcc.Dropdown(id='time-signaly', options=sorted(timeseries_data.keys()), value=opt_options['y_time'], multi=True),
         dcc.Graph(id='time-graph', figure=empty_figure())
     ]))
 

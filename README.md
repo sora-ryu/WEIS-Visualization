@@ -71,3 +71,4 @@ WEIS Output/
 - [ ] Implement WISDEM Viz page - general
 - [ ] Implement WISDEM Viz page - doc for customized viz function
 - [ ] Improve UI - drag and drop card
+- [ ] Read and write file tree, variable settings from yaml file

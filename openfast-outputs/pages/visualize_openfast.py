@@ -8,6 +8,7 @@ Callback function - Add controls to build the interaction. Automatically run thi
 # TODO: Need to solve following warning error - A nonexistent object was used in an `Input` of a Dash callback. The id of this object is `signalx` and the property is `value`.
 #       This is caused by the fact that 'signalx' defined in sublayout.
 
+# TODO: Save changed variable settings into input yaml file again
 
 # Import Packages
 import dash_bootstrap_components as dbc
@@ -33,6 +34,19 @@ register_page(
     path='/open_fast'
 )
 
+@callback(Output('var-openfast', 'data'),
+          Input('input-dict', 'data'))
+def read_variables(input_dict):
+    # TODO: Redirect to the home page when missing input yaml file
+    if input_dict is None or input_dict == {}:
+        raise PreventUpdate
+    
+    of_options = {}
+    of_options['x'] = input_dict['userPreferences']['fast_xaxis']
+    of_options['y'] = input_dict['userPreferences']['fast_yaxis']
+
+    return of_options
+
 # We are using card container where we define sublayout with rows and cols.
 def layout():
     file_upload_layout = dcc.Upload(
@@ -54,7 +68,9 @@ def layout():
                         )
     
     layout = dbc.Row([
-                # Data to share over functions
+                # OpenFAST related Data fetched from input-dict
+                dcc.Store(id='var-openfast', data={}),
+                # Data to share over functions - openfast .out file
                 dcc.Store(id='store', data={}),
                 # Starts with Pop-up window
                 dbc.Modal([
@@ -128,11 +144,10 @@ def show_data_contents(store, name, date):
         return table_layout
     
 
-@callback(
-        Output('openfast-div', 'children'),
-        Input('store', 'data')
-)
-def analyze(store):
+@callback(Output('openfast-div', 'children'),
+          Input('store', 'data'),
+          Input('var-openfast', 'data'))
+def analyze(store, of_options):
     '''
     Once we parse the data from get_deta(), add the sublayout to the main layout where the div is defined as (output-data-upload).
     Hence, add channels/dropdown lists for the description layout.
@@ -148,10 +163,10 @@ def analyze(store):
             [
                 html.H5("Signal-y"),
                 dcc.Dropdown(
-                    id='signaly', options=sorted(df.keys()), value=['Wind1VelX', 'Wind1VelY', 'Wind1VelZ'], multi=True),          # options look like ['Azimuth', 'B1N1Alpha', ...]. select ['Wind1VelX', 'Wind1VelY', 'Wind1VelZ'] as default value
+                    id='signaly', options=sorted(df.keys()), value=of_options['y'], multi=True),          # options look like ['Azimuth', 'B1N1Alpha', ...]. select ['Wind1VelX', 'Wind1VelY', 'Wind1VelZ'] as default value
                 html.H5("Signal-x"),
                 dcc.Dropdown(
-                    id='signalx', options=sorted(df.keys()), value='Time'),                                                       # select 'Time' as default value
+                    id='signalx', options=sorted(df.keys()), value=of_options['x']),                                                       # select 'Time' as default value
                 html.Br(),
                 html.H5("Plot Options"),
                 dcc.RadioItems(
@@ -159,13 +174,12 @@ def analyze(store):
             ]
         )
 
-@callback(
-    Output('graph-div', 'children'),
-    Input('signalx', 'value'),
-    [Input('signaly', 'value')],
-    Input('plotOption', 'value'),
-    Input('store', 'data')
-)
+
+@callback(Output('graph-div', 'children'),
+          Input('signalx', 'value'),
+          [Input('signaly', 'value')],
+          Input('plotOption', 'value'),
+          Input('store', 'data'))
 def draw_graphs(signalx, signaly, plotOption, store):
     '''
     Whenever signalx, signaly, plotOption has been entered, draw the graph.

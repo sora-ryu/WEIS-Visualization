@@ -1,0 +1,693 @@
+userOptions:
+  deisgn_of_experiments: false
+  inverse_design: false
+  optimization: true
+  output_fileName: IEA-22-280-RWT
+  output_folder: /Users/mchetan/Desktop/nrel/projects/0-d-fowt/models/22mw_dfowt/outputs/InitialDW
+  sql_recorder: true
+  sql_recorder_file: log_opt.sql
+
+userPreferences:
+  fast_xaxis: 'Time'
+  fast_yaxis: ['Wind1VelX', 'Wind1VelY', 'Wind1VelZ']
+  opt_conv_yaxis: ['raft.pitch_period', 'floatingse.constr_draft_heel_margin', 'floating.jointdv_0', 'floating.memgrp1.outer_diameter_in']
+  opt_xaxis_stat: 'min'
+  opt_yaxis_stat: 'min'
+  opt_xaxis: 'Wind1VelX'
+  opt_yaxis: ['Wind1VelY', 'Wind1VelZ']
+  opt_time_yaxis: ['Wind1VelX', 'Wind1VelY', 'Wind1VelZ']
+  wisdem_blade_xaxis: 'rotorse.rc.s'
+  wisdem_blade_shape_yaxis: ['rotorse.rc.chord_m', 'rotorse.re.pitch_axis', 'rotorse.theta_deg']
+  wisdem_blade_struct_yaxis_log: ['rotorse.EA_N', 'rotorse.EIxx_N*m**2', 'rotorse.EIyy_N*m**2', 'rotorse.GJ_N*m**2']
+  wisdem_blade_struct_yaxis: ['rotorse.rhoA_kg/m']
+
+outputDirStructure:
+  dirs:
+    InitialDW:
+      dirs:
+        openfast_runs:
+          dirs:
+            Airfoils:
+              dirs: {}
+              files:
+              - IEA_22_Semi_0_AeroDyn15_Polar_21.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_09.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_08.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_20.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_22.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_23.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_27.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_26.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_18.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_24.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_25.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_19.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_00.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_14.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_28.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_29.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_15.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_01.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_17.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_03.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_02.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_16.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_12.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_06.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_07.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_13.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_05.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_11.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_10.dat
+              - IEA_22_Semi_0_AeroDyn15_Polar_04.dat
+            iteration_0:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_1:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_10:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_11:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_12:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_13:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_14:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_15:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_16:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_17:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_18:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_19:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_2:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_20:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_21:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_22:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_23:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_24:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_25:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_26:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_27:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_28:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_29:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_3:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_30:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_31:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_32:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_33:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_34:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_35:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_36:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_37:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_38:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_39:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_4:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_40:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_41:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_42:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_43:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_44:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_45:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_46:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_47:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_48:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_49:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_5:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_50:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_51:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_52:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_53:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_54:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_55:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_56:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_57:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_6:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_7:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_8:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            iteration_9:
+              dirs:
+                timeseries:
+                  dirs: {}
+                  files:
+                  - IEA_22_Semi_0.p
+              files:
+              - fst_vt.p
+              - summary_stats.p
+              - DELs.p
+            wind:
+              dirs: {}
+              files:
+              - IEA_22_Semi_NTM_U12.000000_Seed1501552846.0.in
+              - IEA_22_Semi_NTM_U12.000000_Seed1501552846.0.sum
+              - IEA_22_Semi_NTM_U12.000000_Seed1501552846.0.bts
+          files:
+          - IEA_22_Semi_0_ServoDyn.dat
+          - IEA_22_Semi_0_InflowFile.dat
+          - IEA_22_Semi_0.RO.dbg2
+          - IEA_22_Semi_0_AeroDyn15.dat
+          - IEA_22_Semi_0_Cp_Ct_Cq.txt
+          - IEA_22_Semi_0_ElastoDyn.dat
+          - case_matrix.txt
+          - IEA_22_Semi_0_DISCON.IN
+          - IEA_22_Semi_0.HD.sum
+          - IEA_22_Semi_0.out
+          - IEA_22_Semi_0.outb
+          - IEA_22_Semi_0_AeroDyn15_blade.dat
+          - IEA_22_Semi_0_ElastoDyn_tower.dat
+          - case_matrix.yaml
+          - IEA_22_Semi_0.RO.dbg
+          - IEA_22_Semi_0.fst
+          - IEA_22_Semi_0_MoorDyn.dat
+          - IEA_22_Semi_0_HydroDyn.dat
+          - IEA_22_Semi_0_ElastoDyn_blade.dat
+      files:
+      - Convergence_trend_floatingse.system_structural_mass.png
+      - IEA-22-280-RWT.mat
+      - IEA-22-280-RWT-modeling.yaml
+      - Convergence_trend_floatingse.constr_fairlead_wave.png
+      - Convergence_trend_floatingse.constr_draft_heel_margin.png
+      - IEA-22-280-RWT.yaml
+      - IEA-22-280-RWT.npz
+      - Convergence_trend_aeroelastic.max_nac_accel.png
+      - IEA-22-280-RWT.pkl
+      - log_opt.sql
+      - Convergence_trend_floating.jointdv_0.png
+      - Convergence_trend_floatingse.heave_period.png
+      - Convergence_trend_floatingse.constr_freeboard_heel_margin.png
+      - IEA-22-280-RWT.xlsx
+      - Convergence_trend_floating.jointdv_1.png
+      - Convergence_trend_floatingse.pitch_period.png
+      - IEA-22-280-RWT-analysis.yaml
+      - Convergence_trend_floating.memgrp1.outer_diameter_in.png
+      - IEA-22-280-RWT.csv
+      - Convergence_trend_floatingse.constr_fixed_margin.png
+      - Convergence_trend_aeroelastic.Max_PtfmPitch.png
+      - Convergence_trend_floatingse.constr_variable_margin.png
+      - Convergence_trend_aeroelastic.Std_PtfmPitch.png
+  files: []
