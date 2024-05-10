@@ -31,9 +31,14 @@ def layout():
                                 'textAlign': 'center',
                                 'margin': '10px'
                             },
-                            # multiple=True         # Allow multiple files to be uploaded
+                            multiple=False         # Do not allow multiple files to be uploaded
                         )
     layout = dbc.Row([
+                # Confirm Dialog for input file
+                dcc.ConfirmDialog(
+                    id='confirm-input',
+                    message='Please select yaml file to continue..'
+                ),
                 # Starts with Pop-up window
                 dbc.Modal([
                     dbc.ModalHeader(dbc.ModalTitle('Configuration Input File Upload')),
@@ -49,7 +54,7 @@ def layout():
 
 
 @callback(Output('input-div', 'is_open'),
-          Input('input-data', 'contents'),
+          Input('input-dict', 'data'),
           State('input-div', 'is_open'))
 def toggle_modal(n1, is_open):
     '''
@@ -65,15 +70,18 @@ def parse_yaml(contents):
     content_type, content_string = contents.split(',')
     decoded = base64.b64decode(content_string)
     dict = yaml.safe_load(decoded)
-    print("input file dict:\n", dict)
+    # print("input file dict:\n", dict)
     
     return dict
 
 
-@callback(Output('input-dict', 'data'),
+@callback(Output('confirm-input', 'displayed'),
+          Output('input-dict', 'data'),
           Output('input-cfg-div', 'children'),
-          Input('input-data', 'contents'))
-def check_input_file(contents):
+          Input('input-data', 'contents'),
+          State('input-data', 'filename'),
+          prevent_initial_call=True)
+def check_input_file(contents, filename):
     '''
     Store data in mainApp.py so that it's accessible over pages.
     Show if input file data has been loaded and parsed successfully
@@ -81,5 +89,11 @@ def check_input_file(contents):
     if contents is None:
         raise PreventUpdate
     
-    input_dict = parse_yaml(contents)
-    return input_dict, html.Div([html.H5("Uploaded successfully")])
+    if 'yaml' in filename:
+        # content_type, content_string = contents.split(',')
+        print('filename: ', filename)
+        input_dict = parse_yaml(contents)
+
+        return False, input_dict, html.Div([html.H5("Uploaded successfully")])          # TODO: Show file tree instead?
+    
+    return True, None, None

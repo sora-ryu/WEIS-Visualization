@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import openmdao.api as om
 import plotly.graph_objects as go
+import os
 
 try:
     import ruamel_yaml as ry
@@ -148,3 +149,33 @@ def toggle(click, is_open):
     if click:
         return not is_open
     return is_open
+
+
+# TODO: Add
+def store_dataframes(var_files):
+    dfs = []
+    for idx, file_path in var_files.items():
+        df = pd.read_csv(file_path, skiprows=[0,1,2,3,4,5,7], delim_whitespace=True)
+        # dfs[idx] = df
+        dfs.append({idx: df.to_dict('records')})
+    
+    return dfs
+
+
+# TODO: Add
+def get_file_info(file_path):
+    file_name = file_path.split('/')[-1]
+    file_abs_path = os.path.abspath(file_path)
+    file_size = round(os.path.getsize(file_path) / (1024**2), 2)
+    creation_time = os.path.getctime(file_path)
+    modification_time = os.path.getmtime(file_path)
+
+    file_info = {
+        'file_name': file_name,
+        'file_abs_path': file_abs_path,
+        'file_size': file_size,
+        'creation_time': creation_time,
+        'modification_time': modification_time
+    }
+
+    return file_info

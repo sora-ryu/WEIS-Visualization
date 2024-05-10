@@ -8,18 +8,28 @@ userOptions:
   sql_recorder_file: log_opt.sql
 
 userPreferences:
-  fast_xaxis: 'Time'
-  fast_yaxis: ['Wind1VelX', 'Wind1VelY', 'Wind1VelZ']
-  opt_conv_yaxis: ['raft.pitch_period', 'floatingse.constr_draft_heel_margin', 'floating.jointdv_0', 'floating.memgrp1.outer_diameter_in']
-  opt_xaxis_stat: 'min'
-  opt_yaxis_stat: 'min'
-  opt_xaxis: 'Wind1VelX'
-  opt_yaxis: ['Wind1VelY', 'Wind1VelZ']
-  opt_time_yaxis: ['Wind1VelX', 'Wind1VelY', 'Wind1VelZ']
-  wisdem_blade_xaxis: 'rotorse.rc.s'
-  wisdem_blade_shape_yaxis: ['rotorse.rc.chord_m', 'rotorse.re.pitch_axis', 'rotorse.theta_deg']
-  wisdem_blade_struct_yaxis_log: ['rotorse.EA_N', 'rotorse.EIxx_N*m**2', 'rotorse.EIyy_N*m**2', 'rotorse.GJ_N*m**2']
-  wisdem_blade_struct_yaxis: ['rotorse.rhoA_kg/m']
+  openfast:
+    file_path:
+      file1: 'of-output/NREL5MW_OC3_spar_0.out'
+      file2: 'of-output/IEA15_0.out'
+    graph:
+      xaxis: 'Time'
+      yaxis: ['Wind1VelX', 'Wind1VelY', 'Wind1VelZ']
+  optimization:
+    convergence:
+      channels: ['raft.pitch_period', 'floatingse.constr_draft_heel_margin', 'floating.jointdv_0', 'floating.memgrp1.outer_diameter_in']
+    dlc:
+      xaxis_stat: 'min'
+      yaxis_stat: 'min'
+      xaxis: 'Wind1VelX'
+      yaxis: ['Wind1VelY', 'Wind1VelZ']
+    timeseries:
+      channels: ['Wind1VelX', 'Wind1VelY', 'Wind1VelZ']
+  wisdem:
+    blade_xaxis: 'rotorse.rc.s'
+    blade_shape_yaxis: ['rotorse.rc.chord_m', 'rotorse.re.pitch_axis', 'rotorse.theta_deg']
+    blade_struct_yaxis_log: ['rotorse.EA_N', 'rotorse.EIxx_N*m**2', 'rotorse.EIyy_N*m**2', 'rotorse.GJ_N*m**2']
+    blade_struct_yaxis: ['rotorse.rhoA_kg/m']
 
 outputDirStructure:
   dirs:

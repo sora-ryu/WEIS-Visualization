@@ -5,18 +5,16 @@ For understanding:
 Callback function - Add controls to build the interaction. Automatically run this function whenever changes detected from either Input or State. Update the output.
 '''
 
-# TODO: Need to solve following warning error - A nonexistent object was used in an `Input` of a Dash callback. The id of this object is `signalx` and the property is `value`.
-#       This is caused by the fact that 'signalx' defined in sublayout.
-
 # TODO: Save changed variable settings into input yaml file again
 
 # Import Packages
 import dash_bootstrap_components as dbc
-from dash import Dash, Input, Output, State, callback, dcc, html, dash_table, register_page
+from dash import Dash, Input, Output, State, MATCH, ALL, callback, dcc, html, dash_table, register_page
 from dash.exceptions import PreventUpdate
 import copy
 import base64
 import io
+import os
 import datetime
 import plotly.express as px
 import plotly.graph_objects as go
@@ -34,201 +32,190 @@ register_page(
     path='/open_fast'
 )
 
+file_indices = ['file1', 'file2']
+
 @callback(Output('var-openfast', 'data'),
+          [[Output(f'df-{idx}', 'data') for idx in file_indices]],
+          Output('var-graph', 'data'),
           Input('input-dict', 'data'))
 def read_variables(input_dict):
+    '''
+    Input: 
+    '''
     # TODO: Redirect to the home page when missing input yaml file
     if input_dict is None or input_dict == {}:
         raise PreventUpdate
     
-    of_options = {}
-    of_options['x'] = input_dict['userPreferences']['fast_xaxis']
-    of_options['y'] = input_dict['userPreferences']['fast_yaxis']
+    var_openfast = input_dict['userPreferences']['openfast']        # {'file_path': {'file1': 'of-output/NREL5MW_OC3_spar_0.out', 'file2': 'of-output/IEA15_0.out'}, 'graph': {'xaxis': 'Time', 'yaxis': ['Wind1VelX', 'Wind1VelY', 'Wind1VelZ']}}
+    var_files = var_openfast['file_path']
+    dfs = store_dataframes(var_files)       # [{file1: df1, file2: df2, ... }]
+    
+    num_files = list(var_files.keys())
+    print('num of files: ', num_files)
 
-    return of_options
+    var_graphs = var_openfast['graph']
+
+    return var_openfast, dfs, var_graphs
+
 
 # We are using card container where we define sublayout with rows and cols.
 def layout():
-    file_upload_layout = dcc.Upload(
-                            id='upload-data', children=html.Div([
-                                'Drag and Drop or ',
-                                html.A('Select Files')
-                            ]),
-                            style={
-                                'width': '100%',
-                                'height': '60px',
-                                'lineHeight': '60px',
-                                'borderWidth': '1px',
-                                'borderStyle': 'dashed',
-                                'borderRadius': '5px',
-                                'textAlign': 'center',
-                                'margin': '10px'
-                            },
-                            # multiple=True         # Allow multiple files to be uploaded
-                        )
-    
-    layout = dbc.Row([
+    layout = dcc.Loading(html.Div([
                 # OpenFAST related Data fetched from input-dict
                 dcc.Store(id='var-openfast', data={}),
-                # Data to share over functions - openfast .out file
-                dcc.Store(id='store', data={}),
-                # Starts with Pop-up window
-                dbc.Modal([
-                    dbc.ModalHeader(dbc.ModalTitle('File Upload')),
-                    dbc.ModalBody(file_upload_layout)],
-                    id='upload-div',
-                    size='xl',
-                    is_open=True
+                # dcc.Store(id='file-indices', data=[]),
+                # Dataframe to share over functions - openfast .out file
+                html.Div(
+                    [dcc.Store(id=f'df-{idx}', data={}) for idx in file_indices]      # dcc.Store(id='df-file1', data={}),          # {file1, df1}
                 ),
-                # Left column is for description layout
-                dbc.Col(dcc.Loading(html.Div(id='output-data-upload')), width=4),        # related function: show_data_contents(), analyze()
-                # Right column is for graph layout
-                dbc.Col(dcc.Loading(html.Div(id='graph-div')), width=8)                  # related function: draw_graphs()
-            ])
+                # Graph configuration
+                dcc.Store(id='var-graph', data={}),
+                
+                dbc.Card([
+                    dbc.CardBody([
+                        dbc.InputGroup(
+                            [
+                                # Layout for showing graph configuration setting
+                                html.Div(id='graph-cfg-div', className='text-center'),
+                                dbc.Button('Save', id='save-cfg', n_clicks=0)
+                            ]
+                        )
+                    ])
+                ]),
+                # Append cards per file
+                dbc.Row([], id='output')
+            ]))
     
     return layout
 
 
-@callback(Output('upload-div', 'is_open'),
-          Input('upload-data', 'contents'),
-          State('upload-div', 'is_open'))
-def toggle_modal(n1, is_open):
-    '''
-    Once we get the file selected from the user (upload-data), close the pop-up window (upload-div)
-    '''
-    return toggle(n1, is_open)
-
-
-
-@callback(Output('store', 'data'),
-          Input('upload-data', 'contents'))
-def get_data(contents):
-    '''
-    Once we get the file selected from the user (upload-data), parse the data and saved it as 'store' id.
-    '''
-    if contents is not None:
-        content_type, content_string = contents.split(',')
-        decoded = base64.b64decode(content_string)
-        df = pd.read_csv(io.StringIO(decoded.decode('utf-8')), skiprows=[0,1,2,3,4,5,7], delim_whitespace=True)
-
-        return df.to_dict('records')
-
-
-@callback(Output('output-data-upload', 'children'),
-          Input('store', 'data'),
-          State('upload-data', 'filename'),
-          State('upload-data', 'last_modified'))
-def show_data_contents(store, name, date):
-    '''
-    Once we parse the data from get_deta(), add the sublayout to the main layout where the div is defined as (output-data-upload).
-    Hence, show the filename and table for the description layout.
-    '''
-    df = pd.DataFrame(store)
-
-    if name is not None:
-        table_layout = dbc.Card(
-                        [
-                            dbc.CardHeader(f'File name: {name}', className='cardHeader'),
-                            dcc.Loading(dbc.CardBody([
-                                    html.H5(f'Date: {datetime.datetime.fromtimestamp(date)}'),
-                                    dash_table.DataTable(
-                                        data=store,
-                                        columns=[{'name': i, 'id': i} for i in df.columns],
-                                        fixed_columns = {'headers': True, 'data': 1},
-                                        page_size=10,
-                                        style_table={'height': '300px', 'overflowX': 'auto', 'overflowY': 'auto'}),
-                                    html.Div(id='openfast-div')
-                            ]))
-                        ], className='divBorder')
-        
-        return table_layout
+@callback(Output('graph-cfg-div', 'children'),
+          Input('df-file1', 'data'),
+          Input('var-graph', 'data'))
+def define_graph_cfg_layout(df1, var_graph):
     
+    print('var_graph: ', var_graph)
+    signalx = var_graph['xaxis']
+    signaly = var_graph['yaxis']
+    channels = sorted(df1['file1'][0].keys())
+    # print(df_dict['file1'][0])          # First row channels
 
-@callback(Output('openfast-div', 'children'),
-          Input('store', 'data'),
-          Input('var-openfast', 'data'))
-def analyze(store, of_options):
-    '''
-    Once we parse the data from get_deta(), add the sublayout to the main layout where the div is defined as (output-data-upload).
-    Hence, add channels/dropdown lists for the description layout.
-    '''
-    if store == {}:        # Prevent this function to be called when data is not uploaded yet
-        logging.warning(f"Upload data first..")
-        raise PreventUpdate
-
-    else:
-        logging.info(f"Analyze function..")
-        df = pd.DataFrame(store)
-        return html.Div(
-            [
-                html.H5("Signal-y"),
-                dcc.Dropdown(
-                    id='signaly', options=sorted(df.keys()), value=of_options['y'], multi=True),          # options look like ['Azimuth', 'B1N1Alpha', ...]. select ['Wind1VelX', 'Wind1VelY', 'Wind1VelZ'] as default value
-                html.H5("Signal-x"),
-                dcc.Dropdown(
-                    id='signalx', options=sorted(df.keys()), value=of_options['x']),                                                       # select 'Time' as default value
-                html.Br(),
-                html.H5("Plot Options"),
-                dcc.RadioItems(
-                    id='plotOption', options=['single plot', 'multiple plot'], value='single plot', inline=True)                  # Select 'single plot' as default value
-            ]
-        )
+    return html.Div([
+                html.Div([
+                    html.Label(['Signal-y:'], style={'font-weight':'bold', 'text-align':'center'}),
+                    dcc.Dropdown(id='signaly', options=channels, value=signaly, multi=True),          # options look like ['Azimuth', 'B1N1Alpha', ...]. select ['Wind1VelX', 'Wind1VelY', 'Wind1VelZ'] as default value
+                ], style = {'float':'left'}),
+                html.Div([
+                    html.Label(['Signal-x:'], style={'font-weight':'bold', 'text-align':'center'}),
+                    dcc.Dropdown(id='signalx', options=channels, value=signalx),          # options look like ['Azimuth', 'B1N1Alpha', ...]. select ['Wind1VelX', 'Wind1VelY', 'Wind1VelZ'] as default value
+                ], style = {'float':'left'}),
+                html.Div([
+                    html.Label(['Plot options:'], style={'font-weight':'bold', 'text-align':'center'}),
+                    dcc.RadioItems(id='plotOption', options=['single plot', 'multiple plot'], value='single plot', inline=True),
+                ], style = {'float':'left'})
+            ])
 
 
-@callback(Output('graph-div', 'children'),
-          Input('signalx', 'value'),
-          [Input('signaly', 'value')],
-          Input('plotOption', 'value'),
-          Input('store', 'data'))
-def draw_graphs(signalx, signaly, plotOption, store):
-    '''
-    Whenever signalx, signaly, plotOption has been entered, draw the graph.
-    Create figure with that setting and add that figure to the graph layout.
-    Note that we set default settings (see analyze() function), it will show corresponding default graph.
-    You can dynamically change signalx, signaly, plotOption, and it will automatically update the graph.
-    '''
 
-    # If something missing, don't call this function (= don't draw the figure)
-    if store is None or signalx is None or signaly is None or plotOption is None:
-        raise PreventUpdate
+def define_des_layout(file_info, df):
+    file_abs_path = file_info['file_abs_path']
+    file_size = file_info['file_size']
+    creation_time = file_info['creation_time']
+    modification_time = file_info['modification_time']
     
-    else:
-        df = pd.DataFrame(store)
+    return html.Div([
+                    # File Info
+                    html.H5(f'File Path: {file_abs_path}'),
+                    html.H5(f'File Size: {file_size} MB'),
+                    html.H5(f'Creation Date: {datetime.datetime.fromtimestamp(creation_time)}'),
+                    html.H5(f'Modification Date: {datetime.datetime.fromtimestamp(modification_time)}'),
+                    html.Br(),
 
-        # Put all traces in one single plot
-        if plotOption == 'single plot':
-            fig = make_subplots(rows = 1, cols = 1)
-            for col_idx, label in enumerate(signaly):
-                fig.append_trace(go.Scatter(
-                    x = df[signalx],
-                    y = df[label],
-                    mode = 'lines',
-                    name = label),
-                    row = 1,
-                    col = 1)
+                    # Data Table
+                    # dash_table.DataTable(
+                    #     data=df,
+                    #     columns=[{'name': i, 'id': i} for i in pd.DataFrame(df).columns],
+                    #     fixed_columns = {'headers': True, 'data': 1},
+                    #     page_size=10,
+                    #     style_table={'height': '300px', 'overflowX': 'auto', 'overflowY': 'auto'})
+            ])
 
-        # Put each traces in each separated horizontally aligned subplots
-        elif plotOption == 'multiple plot':
-            fig = make_subplots(rows = 1, cols = len(signaly))
 
-            for col_idx, label in enumerate(signaly):
-                fig.append_trace(go.Scatter(
-                    x = df[signalx],
-                    y = df[label],
-                    mode = 'lines',
-                    name = label),
-                    row = 1,
-                    col = col_idx + 1)
-        
-        # Define the graph layout where it includes the rendered figure
-        graph_layout = dbc.Card(
-                            [
-                                dbc.CardHeader("Graphs", className='cardHeader'),
-                                dbc.CardBody([
-                                    dcc.Graph(figure=fig)
-                                ])
-                            ], className='divBorder')
-        
-        return graph_layout
-        
+def update_figure(signalx, signaly, plotOption, df_dict):
+    print('here')
+    df, = df_dict.values()
+    return draw_graph(signalx, signaly, plotOption, pd.DataFrame(df))
 
+
+for idx in file_indices:
+    callback(Output(f'graph-div-{idx}', 'figure'),
+                Input('signalx', 'value'),
+                Input('signaly', 'value'),
+                Input('plotOption', 'value'),
+                Input(f'df-{idx}', 'data'))(update_figure)
+
+
+def draw_graph(signalx, signaly, plotOption, df):
+    # Whenever signalx, signaly, plotOption has been entered, draw the graph.
+    # Create figure with that setting and add that figure to the graph layout.
+    # Note that we set default settings (see analyze() function), it will show corresponding default graph.
+    # You can dynamically change signalx, signaly, plotOption, and it will automatically update the graph.
+
+    print(signalx, signaly)
+    # Put all traces in one single plot
+    if plotOption == 'single plot':
+        fig = make_subplots(rows = 1, cols = 1)
+        for col_idx, label in enumerate(signaly):
+            fig.append_trace(go.Scatter(
+                x = df[signalx],
+                y = df[label],
+                mode = 'lines',
+                name = label),
+                row = 1,
+                col = 1)
+
+    # Put each traces in each separated horizontally aligned subplots
+    elif plotOption == 'multiple plot':
+        fig = make_subplots(rows = 1, cols = len(signaly))
+
+        for col_idx, label in enumerate(signaly):
+            fig.append_trace(go.Scatter(
+                x = df[signalx],
+                y = df[label],
+                mode = 'lines',
+                name = label),
+                row = 1,
+                col = col_idx + 1)
+    
+    # Define the graph layout where it includes the rendered figure
+    return fig
+
+
+
+def make_card(idx, file_path, df):
+    file_info = get_file_info(file_path)
+    file_name = file_info['file_name']
+    print('idx: ', idx)
+
+    return dbc.Card([
+        dbc.CardHeader(f'File name: {file_name}', className='cardHeader'),
+        dbc.CardBody([
+            dbc.Row([
+                dbc.Col(dcc.Loading(define_des_layout(file_info, df)), width=4),
+                dbc.Col(dcc.Loading(dcc.Graph(id=f'graph-div-{idx}')), width=8)
+            ])
+        ])
+    ])
+
+
+@callback(Output('output', 'children'),
+          Input('var-openfast', 'data'),
+          [[Input(f'df-{idx}', 'data') for idx in file_indices]])
+def manage_cards(var_openfast, df_dict_list):
+    # df_dict_list = [{file1: df1}, {file2: df2}, ...]
+    children = []
+    for idx, file_path in var_openfast['file_path'].items():            # idx = file1, file2, ...
+        df_idx = [d.get(idx, None) for d in df_dict_list][0]
+        children.append(make_card(idx, file_path, df_idx))      # Pass: file1, file1.out, df1
+    
+    return children
