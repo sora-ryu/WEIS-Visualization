@@ -28,16 +28,15 @@ navbar = dbc.NavbarSimple(
     children = [
         dbc.NavItem(dbc.NavLink("Home", href='/')),
         dbc.NavItem(dbc.NavLink("OpenFAST", href='/open_fast')),
-        dbc.NavItem(dbc.NavLink("Optimize", href='/optimize')),
+        dbc.NavItem(dbc.NavLink("Optimization", href='/optimize')),
         dbc.DropdownMenu(
             [dbc.DropdownMenuItem('Blade', href='/wisdem_blade'), dbc.DropdownMenuItem('Cost', href='/wisdem_cost'), dbc.DropdownMenuItem('General', href='/wisdem_general')],
             label="WISDEM",
             nav=True
-        ),
-        dbc.NavItem(dbc.NavLink("3D Visualization", href='/3d_vis'))
+        )
     ],
     brand = APP_TITLE,
-    color = "dark",
+    color = "darkblue",
     dark = True,
     className = "menu-bar"
 )

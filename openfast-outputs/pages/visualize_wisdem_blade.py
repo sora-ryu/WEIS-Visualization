@@ -1,7 +1,7 @@
 '''This is the page for visualize the WISDEM outputs specialized in blade properties'''
 
 # TODO: Merge ys_struct_log into ys_struct and distinguish them by value magnitude?
-# TODO: Do we need dropout list here to let user change variables?
+# TODO: Do we need dropout list here to let user change variables? (Show default settings..)
 
 import dash_bootstrap_components as dbc
 from dash import html, register_page, callback, Input, Output, dcc, State
@@ -36,10 +36,10 @@ def read_variables(input_dict):
         raise PreventUpdate
     
     blade_options = {}
-    blade_options['x'] = input_dict['userPreferences']['wisdem_blade_xaxis']
-    blade_options['ys'] = input_dict['userPreferences']['wisdem_blade_shape_yaxis']
-    blade_options['ys_struct_log'] = input_dict['userPreferences']['wisdem_blade_struct_yaxis_log']
-    blade_options['ys_struct'] = input_dict['userPreferences']['wisdem_blade_struct_yaxis']
+    blade_options['x'] = input_dict['userPreferences']['wisdem']['blade_xaxis']
+    blade_options['ys'] = input_dict['userPreferences']['wisdem']['blade_shape_yaxis']
+    blade_options['ys_struct_log'] = input_dict['userPreferences']['wisdem']['blade_struct_yaxis_log']
+    blade_options['ys_struct'] = input_dict['userPreferences']['wisdem']['blade_struct_yaxis']
 
     return blade_options
 
@@ -60,7 +60,7 @@ def layout():
                                 dbc.CardBody([
                                     dcc.Loading(html.P(id='description'))
                                 ])
-                            ], className='divBorder')
+                            ], className='card')
     
     plots1_layout = dbc.Card(
                         [
@@ -68,23 +68,24 @@ def layout():
                             dbc.CardBody([
                                 dcc.Loading(dcc.Graph(id='blade-shape', figure=empty_figure())),
                             ])
-                        ], className='divBorder')
+                        ], className='card')
     plots2_layout = dbc.Card(
                         [
                             dbc.CardHeader('Blade Structure Properties', className='cardHeader'),
                             dbc.CardBody([
                                 dcc.Loading(dcc.Graph(id='blade-structure', figure=empty_figure())),
                             ])
-                        ], className='divBorder')
+                        ], className='card')
 
     layout = dbc.Row([
+                # dcc.Location(id='url', refresh=False),
                 dcc.Store(id='var-wisdem-blade', data={}),
                 dbc.Col(description_layout, width=3),
                 dbc.Col([
                     dbc.Row(plots1_layout),
                     dbc.Row(plots2_layout)
                 ], width=8)
-            ])
+            ], className='wrapper')
     
 
     return layout

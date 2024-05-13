@@ -105,8 +105,8 @@ def load_yaml(fname_input, package=0):
 
 
 # TODO: Add below functions under WEIS/weis/visualization/utils.py
-def read_per_iteration(iteration):
-    iteration_path = 'visualization_demo/openfast_runs/rank_0/iteration_{}'.format(iteration)
+def read_per_iteration(iteration, root_filepath):
+    iteration_path = '/'.join([root_filepath, 'openfast_runs/rank_0/iteration_{}'.format(iteration)])
     stats = pd.read_pickle(iteration_path+'/summary_stats.p')
     # dels = pd.read_pickle(iteration_path+'/DELs.p')
     # fst_vt = pd.read_pickle(iteration_path+'/fst_vt.p')
@@ -114,7 +114,7 @@ def read_per_iteration(iteration):
     return stats
 
 # TODO: Add
-def get_timeseries_data(run_num, stats, iteration):
+def get_timeseries_data(run_num, stats, iteration, root_filepath):
     
     stats = stats.reset_index()     # make 'index' column that has elements of 'IEA_22_Semi_00, ...'
     print("stats\n", stats)
@@ -125,7 +125,7 @@ def get_timeseries_data(run_num, stats, iteration):
         filename = ('_'.join(filename.split('_')[:-1])+'_0_'+filename.split('_')[-1]+'.p').strip()
     
     # visualization_demo/openfast_runs/rank_0/iteration_0/timeseries/IEA_22_Semi_0_0.p
-    timeseries_path = 'visualization_demo/openfast_runs/rank_0/iteration_{}/timeseries/{}'.format(iteration, filename)
+    timeseries_path = '/'.join([root_filepath, 'openfast_runs/rank_0/iteration_{}/timeseries/{}'.format(iteration, filename)])
     print('timeseries_path:\n', timeseries_path)
     timeseries_data = pd.read_pickle(timeseries_path)
 

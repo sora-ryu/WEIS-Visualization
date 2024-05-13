@@ -1,7 +1,8 @@
 # WEIS-Visualization
 Full-stack development for WEIS input/output visualization
 
-# How to Start
+# User Guide - How to Start
+Make sure that 'test.yaml' file located under openfast-outpus/ folder.
 ```
 conda env create -f environment.yml                                   # Create conda environment from yml
 conda activate dash                                                   # Activate the new environment
@@ -71,4 +72,6 @@ WEIS Output/
 - [ ] Implement WISDEM Viz page - general
 - [ ] Implement WISDEM Viz page - doc for customized viz function
 - [ ] Improve UI - drag and drop card
-- [ ] Read and write file tree, variable settings from yaml file
+- [x] Read user preferences
+- [x] Update the user preferences, variable settings from yaml file
+- [x] Trivial function updates - accept only yaml file for input, solve warning errors (nonexistent object at the callback functions)

@@ -67,7 +67,7 @@ def parse_yaml(contents):
     '''
     Parse the data contents in dictionary format
     '''
-    content_type, content_string = contents.split(',')
+    content_type, content_string = contents.split(',')      # content_type:  data:application/x-yaml;base64
     decoded = base64.b64decode(content_string)
     dict = yaml.safe_load(decoded)
     # print("input file dict:\n", dict)
@@ -90,8 +90,7 @@ def check_input_file(contents, filename):
         raise PreventUpdate
     
     if 'yaml' in filename:
-        # content_type, content_string = contents.split(',')
-        print('filename: ', filename)
+        print('\nInput Filename: ', filename)
         input_dict = parse_yaml(contents)
 
         return False, input_dict, html.Div([html.H5("Uploaded successfully")])          # TODO: Show file tree instead?

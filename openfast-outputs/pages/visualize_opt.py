@@ -4,14 +4,10 @@
 For understanding:
 Callback function - Add controls to build the interaction. Automatically run this function whenever changes detected from either Input or State. Update the output.
 '''
-# TODO: Choose a folder either OpenFAST opt output or RAFT opt output
-# TODO: Find alternatives to Global variables
-# TODO: Reusable fig creation function?
-# TODO: Save changed variable settings into input yaml file again
 
 # Import Packages
 import dash_bootstrap_components as dbc
-from dash import html, register_page, callback, Input, Output, dcc, State
+from dash import html, register_page, callback, Input, Output, dcc, State, ctx
 import pandas as pd
 import numpy as np
 import logging
@@ -21,6 +17,7 @@ import openmdao.api as om
 from plotly.subplots import make_subplots
 import plotly.express as px
 import plotly.graph_objects as go
+import plotly.io as pio
 from dash.exceptions import PreventUpdate
 import json
 from utils.utils import *
@@ -36,6 +33,11 @@ register_page(
     path='/optimize'
 )
 
+pio.templates.default = "ggplot2"
+
+###############################################
+#   Read Optimization related variables/data from yaml file
+###############################################
 
 @callback(Output('var-opt', 'data'),
           Input('input-dict', 'data'))
@@ -43,14 +45,17 @@ def read_variables(input_dict):
     # TODO: Redirect to the home page when missing input yaml file
     if input_dict is None or input_dict == {}:
         raise PreventUpdate
-    
+
     opt_options = {}
-    opt_options['conv_y'] = input_dict['userPreferences']['opt_conv_yaxis']
-    opt_options['x_stat'] = input_dict['userPreferences']['opt_xaxis_stat']
-    opt_options['y_stat'] = input_dict['userPreferences']['opt_yaxis_stat']
-    opt_options['x'] = input_dict['userPreferences']['opt_xaxis']
-    opt_options['y'] = input_dict['userPreferences']['opt_yaxis']
-    opt_options['y_time'] = input_dict['userPreferences']['opt_time_yaxis']
+    var_opt = input_dict['userPreferences']['optimization']
+    opt_options['root_file_path'] = input_dict['userOptions']['output_folder']
+    opt_options['log_file_path'] = '/'.join([input_dict['userOptions']['output_folder'], input_dict['userOptions']['sql_recorder_file']])
+    opt_options['conv_y'] = var_opt['convergence']['channels']
+    opt_options['x_stat'] = var_opt['dlc']['xaxis_stat']
+    opt_options['y_stat'] = var_opt['dlc']['yaxis_stat']
+    opt_options['x'] = var_opt['dlc']['xaxis']
+    opt_options['y'] = var_opt['dlc']['yaxis']
+    opt_options['y_time'] = var_opt['timeseries']['channels']
 
     return opt_options
 
@@ -61,9 +66,17 @@ def read_log(log_file_path):
     df = parse_contents(log_data)
     # df.to_csv('RAFT/log_opt.csv', index=False)
 
+
+###############################################
+#   Basic layout definition
+###############################################
+
 @callback(Output('conv-layout', 'children'),
           Input('var-opt', 'data'))
 def define_convergence_layout(opt_options):
+    # Read log file
+    read_log(opt_options['log_file_path'])
+
     # Layout for visualizing Conv-trend data
     convergence_layout = dbc.Card(
                         [
@@ -71,21 +84,18 @@ def define_convergence_layout(opt_options):
                             dbc.CardBody([
                                 dcc.Loading(
                                     html.Div([
-                                        html.H5('Select Y-channel:'),
-                                        dcc.Dropdown(id='signaly', options=sorted(df.keys()), value = opt_options['conv_y'], multi=True),      # Get 'signaly' channels from user. Related function: update_graphs()
+                                        html.H6('Y-channel:'),
+                                        dcc.Dropdown(id='signaly', options=sorted(df.keys()), value = opt_options['conv_y'], multi=True, style={'color': 'black'}),      # Get 'signaly' channels from user. Related function: update_graphs()
                                         dcc.Graph(id='conv-trend', figure=empty_figure()),                      # Initialize with empty figure and update with 'update-graphs() function'. Related function: update_graphs()
                                     ])
                                 )
                             ])
-                        ], className='divBorder')
+                        ], className='card')
     
     return convergence_layout
 
-# We are using card container where we define sublayout with rows and cols.
-def layout():
-    log_file_path = 'visualization_demo/log_opt.sql'
-    # log_file_path = 'RAFT/log_opt.sql'
-    read_log(log_file_path)
+
+def define_iteration_with_dlc_layout():
 
     # Layout for visualizing Specific Iteration data - hidden in default
     iteration_with_dlc_layout = dbc.Collapse(
@@ -93,16 +103,21 @@ def layout():
                                             dbc.CardHeader(id='dlc-output-iteration', className='cardHeader'),      # Related function: update_dlc_outputs()
                                             dbc.CardBody([
                                                 dcc.Loading(html.Div(id='dlc-iteration-data'))                      # Related function: update_dlc_outputs()
-                                            ])], className='divBorder'),
+                                            ])], className='card'),
                                     id = 'collapse',
                                     is_open=False)
+
+    return iteration_with_dlc_layout
     
+
+# We are using card container where we define sublayout with rows and cols.
+def layout():
 
     layout = dbc.Row([
                 # Optimization related Data fetched from input-dict
                 dcc.Store(id='var-opt', data={}),
                 dbc.Col(id='conv-layout', width=6),
-                dbc.Col(iteration_with_dlc_layout, width=6),
+                dbc.Col(define_iteration_with_dlc_layout(), width=6),
 
                 # Modal Window layout for visualizing Outlier timeseries data
                 dcc.Loading(dbc.Modal([
@@ -110,7 +125,13 @@ def layout():
                     dbc.ModalBody(html.Div(id='outlier'))],                                                         # Related function: display_outlier()
                     id='outlier-div',
                     size='xl',
-                    is_open=False))
+                    is_open=False)),
+                html.Div(id='dummy-div'),
+                # Confirm Dialog to check updated
+                dcc.ConfirmDialog(
+                    id='confirm-update-opt',
+                    message='Updated'
+                )
     ])
 
     return layout
@@ -195,7 +216,6 @@ def update_graphs(signaly):
     return fig
 
 
-
 ###############################################
 # DLC related functions
 ###############################################
@@ -207,6 +227,9 @@ def toggle_iteration_with_dlc_layout(clickData, is_open):
     '''
     If iteration has been clicked, open the card layout on right side.
     '''
+    if clickData is None:
+        raise PreventUpdate
+    
     return toggle(clickData, is_open)
 
 
@@ -231,8 +254,8 @@ def update_dlc_outputs(clickData, opt_options):
     if not iteration in [0, 1, 51]:
         return title_phrase, html.Div([html.H5("Please select other iteration..")])
     
-    stats = read_per_iteration(iteration)
-    case_matrix_path = 'visualization_demo/openfast_runs/rank_0/case_matrix.yaml'
+    stats = read_per_iteration(iteration, opt_options['root_file_path'])
+    case_matrix_path = '/'.join([opt_options['root_file_path'], 'openfast_runs/rank_0/case_matrix.yaml'])
     cm = read_cm(case_matrix_path)
     multi_indices = sorted(stats.reset_index().keys()),
 
@@ -299,6 +322,7 @@ def update_dlc_plot(x_chan_option, y_chan_option, x_channel, y_channel):
 
     return fig
 
+
 def plot_dlc(cm, stats, x_chan_option, y_chan_option, x_channel, y_channels):
     '''
     Function from:
@@ -316,6 +340,7 @@ def plot_dlc(cm, stats, x_chan_option, y_chan_option, x_channel, y_channels):
     fig = make_subplots(
         rows = len(y_channels),
         cols = 1,
+        shared_xaxes=True,
         vertical_spacing=0.1)
 
     # Add traces
@@ -326,10 +351,13 @@ def plot_dlc(cm, stats, x_chan_option, y_chan_option, x_channel, y_channels):
             trace = go.Scatter(x=x, y=y, mode='markers', name='dlc_'+str(dlc))
             fig.add_trace(trace, row=row_idx+1, col=1)
         fig.update_yaxes(title_text=f'{y_chan_option.capitalize()} {y_channel}', row=row_idx+1, col=1)
-        fig.update_xaxes(title_text=f'{x_chan_option.capitalize()} {x_channel}', row=row_idx+1, col=1)
+    
+    fig.update_xaxes(title_text=f'{x_chan_option.capitalize()} {x_channel}')
 
     fig.update_layout(
-        height=300 * len(y_channels))
+        height=300 * len(y_channels),
+        title='DLC Analysis',
+        title_x=0.5)
     
     return fig
 
@@ -345,6 +373,9 @@ def toggle_outlier_timeseries_layout(clickData, is_open):
     '''
     Once user assumes a point as outlier and click that point, open the modal window showing the corresponding time series data.
     '''
+    if clickData is None:
+        raise PreventUpdate
+    
     return toggle(clickData, is_open)
 
 
@@ -364,7 +395,7 @@ def display_outlier(clickData, opt_options):
     print("corresponding openfast run: ", of_run_num)
 
     global timeseries_data
-    filename, timeseries_data = get_timeseries_data(of_run_num, stats, iteration)
+    filename, timeseries_data = get_timeseries_data(of_run_num, stats, iteration, opt_options['root_file_path'])
     print(timeseries_data)
 
     sublayout = dcc.Loading(html.Div([
@@ -398,3 +429,31 @@ def update_timegraphs(signaly):
     return fig
 
 
+###############################################
+#   Automatic Save configurations
+###############################################
+
+@callback(Output('dummy-div', 'children'),
+          Input('input-dict', 'data'),
+          Input('signaly', 'value'),
+          Input('x-stat-option', 'value'),
+          Input('y-stat-option', 'value'),
+          Input('x-channel', 'value'),
+          Input('y-channel', 'value'),
+          Input('time-signaly', 'value'),
+          prevent_initial_call=True)
+def save_optimization(input_dict, signaly, x_chan_option, y_chan_option, x_channel, y_channel, time_signaly):
+
+    print('Automatic save with ',signaly, x_chan_option, y_chan_option, x_channel, y_channel, time_signaly)
+
+    input_dict['userPreferences']['optimization']['convergence']['channels'] = signaly
+    input_dict['userPreferences']['optimization']['dlc']['xaxis'] = x_channel
+    input_dict['userPreferences']['optimization']['dlc']['yaxis'] = y_channel
+    input_dict['userPreferences']['optimization']['dlc']['xaxis_stat'] = x_chan_option
+    input_dict['userPreferences']['optimization']['dlc']['yaxis_stat'] = y_chan_option
+    input_dict['userPreferences']['optimization']['timeseries']['channels'] = time_signaly
+
+    with open('test.yaml', 'w') as outfile:
+        yaml.dump(input_dict, outfile, default_flow_style=False)
+    
+    return html.P('')
