@@ -339,9 +339,9 @@ def plot_dlc(cm, stats, x_chan_option, y_chan_option, x_channel, y_channels):
     # Add subplots for multiple y-channels vertically
     fig = make_subplots(
         rows = len(y_channels),
-        cols = 1,
-        shared_xaxes=True,
-        vertical_spacing=0.1)
+        cols = 1)
+        # shared_xaxes=True,
+        # vertical_spacing=0.05)
 
     # Add traces
     for row_idx, y_channel in enumerate(y_channels):
@@ -351,13 +351,12 @@ def plot_dlc(cm, stats, x_chan_option, y_chan_option, x_channel, y_channels):
             trace = go.Scatter(x=x, y=y, mode='markers', name='dlc_'+str(dlc))
             fig.add_trace(trace, row=row_idx+1, col=1)
         fig.update_yaxes(title_text=f'{y_chan_option.capitalize()} {y_channel}', row=row_idx+1, col=1)
-    
-    fig.update_xaxes(title_text=f'{x_chan_option.capitalize()} {x_channel}')
 
     fig.update_layout(
         height=300 * len(y_channels),
-        title='DLC Analysis',
-        title_x=0.5)
+        title_text='DLC Analysis')
+    
+    fig.update_xaxes(title_text=f'{x_chan_option.capitalize()} {x_channel}')
     
     return fig
 

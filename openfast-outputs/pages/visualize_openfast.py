@@ -141,12 +141,12 @@ def define_des_layout(file_info, df):
                     html.Br(),
 
                     # Data Table
-                    dash_table.DataTable(
-                        data=df,
-                        columns=[{'name': i, 'id': i} for i in pd.DataFrame(df).columns],
-                        fixed_columns = {'headers': True, 'data': 1},
-                        page_size=10,
-                        style_table={'height': '300px', 'overflowX': 'auto', 'overflowY': 'auto'})
+                    # dash_table.DataTable(
+                    #     data=df,
+                    #     columns=[{'name': i, 'id': i} for i in pd.DataFrame(df).columns],
+                    #     fixed_columns = {'headers': True, 'data': 1},
+                    #     page_size=10,
+                    #     style_table={'height': '300px', 'overflowX': 'auto', 'overflowY': 'auto'})
             ])
 
 
@@ -184,8 +184,10 @@ def draw_graph(signalx, signaly, plotOption, df):
                 name = label),
                 row = 1,
                 col = 1)
+        
 
     # Put each traces in each separated horizontally aligned subplots
+    # TODO: Should we create multi-row subplots?
     elif plotOption == 'multiple plot':
         fig = make_subplots(rows = 1, cols = len(signaly))
 
@@ -197,8 +199,11 @@ def draw_graph(signalx, signaly, plotOption, df):
                 name = label),
                 row = 1,
                 col = col_idx + 1)
+            fig.update_yaxes(title_text=label, row=1, col=col_idx+1)
     
     # Define the graph layout where it includes the rendered figure
+    fig.update_xaxes(title_text=signalx)
+
     return fig
 
 
@@ -214,8 +219,8 @@ def make_card(idx, file_path, df):
         dbc.CardHeader(f'File name: {file_name}', className='cardHeader'),
         dbc.CardBody([
             dbc.Row([
-                dbc.Col(dcc.Loading(define_des_layout(file_info, df)), width=4),
-                dbc.Col(dcc.Loading(dcc.Graph(id=f'graph-div-{idx}')), width=8)
+                dbc.Col(dcc.Loading(define_des_layout(file_info, df)), width=3),
+                dbc.Col(dcc.Loading(dcc.Graph(id=f'graph-div-{idx}')), width=9)
             ])
         ])
     ])
