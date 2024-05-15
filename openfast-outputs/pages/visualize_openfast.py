@@ -33,28 +33,28 @@ register_page(
 
 file_indices = ['file1', 'file2']       # Need to define as the way defined in .yaml file
 
-
 ###############################################
 #   Read openfast related variables from yaml file
 ###############################################
 
 @callback(Output('var-openfast', 'data'),
+          Output('var-openfast-graph', 'data'),
           [[Output(f'df-{idx}', 'data') for idx in file_indices]],
           Input('input-dict', 'data'))
 def read_default_variables(input_dict):
     if input_dict is None or input_dict == {}:
         raise PreventUpdate
     
+    of_options = {}
     var_openfast = input_dict['userPreferences']['openfast']        # {'file_path': {'file1': 'of-output/NREL5MW_OC3_spar_0.out', 'file2': 'of-output/IEA15_0.out'}, 'graph': {'xaxis': 'Time', 'yaxis': ['Wind1VelX', 'Wind1VelY', 'Wind1VelZ']}}
     var_files = var_openfast['file_path']
     dfs = store_dataframes(var_files)       # [{file1: df1, file2: df2, ... }]
+    print('read from yaml')
 
-    global default_signalx, default_signaly
-    var_graphs = var_openfast['graph']
-    default_signalx = var_graphs['xaxis']
-    default_signaly = var_graphs['yaxis']
+    of_options['graph_x'] = var_openfast['graph']['xaxis']
+    of_options['graph_y'] = var_openfast['graph']['yaxis']
 
-    return var_openfast, dfs
+    return var_openfast, of_options, dfs
 
 
 ###############################################
@@ -63,12 +63,6 @@ def read_default_variables(input_dict):
 # We are using card container where we define sublayout with rows and cols.
 def layout():
     layout = dcc.Loading(html.Div([
-                # OpenFAST related Data fetched from input-dict
-                dcc.Store(id='var-openfast', data={}),
-                # Dataframe to share over functions - openfast .out file
-                 html.Div(
-                    [dcc.Store(id=f'df-{idx}', data={}) for idx in file_indices]      # dcc.Store(id='df-file1', data={}),          # {file1, df1}
-                ),
                 # Confirm Dialog to check updated
                 dcc.ConfirmDialog(
                     id='confirm-update-of',
@@ -97,8 +91,9 @@ def layout():
 ###############################################
 
 @callback(Output('graph-cfg-div', 'children'),
-          Input('df-file1', 'data'))
-def define_graph_cfg_layout(df1):
+          Input('df-file1', 'data'),
+          Input('var-openfast-graph', 'data'))
+def define_graph_cfg_layout(df1, of_options):
 
     if df1 is None or df1 == {}:
         raise PreventUpdate
@@ -109,11 +104,11 @@ def define_graph_cfg_layout(df1):
     return html.Div([
                 html.Div([
                     html.Label(['Signal-y:'], style={'font-weight':'bold', 'text-align':'center'}),
-                    dcc.Dropdown(id='signaly', options=channels, value=default_signaly, multi=True),          # options look like ['Azimuth', 'B1N1Alpha', ...]. select ['Wind1VelX', 'Wind1VelY', 'Wind1VelZ'] as default value
+                    dcc.Dropdown(id='signaly', options=channels, value=of_options['graph_y'], multi=True),          # options look like ['Azimuth', 'B1N1Alpha', ...]. select ['Wind1VelX', 'Wind1VelY', 'Wind1VelZ'] as default value
                 ], style = {'float':'left', 'padding-left': '1.0rem'}),
                 html.Div([
                     html.Label(['Signal-x:'], style={'font-weight':'bold', 'text-align':'center'}),
-                    dcc.Dropdown(id='signalx', options=channels, value=default_signalx),          # options look like ['Azimuth', 'B1N1Alpha', ...]. select ['Wind1VelX', 'Wind1VelY', 'Wind1VelZ'] as default value
+                    dcc.Dropdown(id='signalx', options=channels, value=of_options['graph_x']),          # options look like ['Azimuth', 'B1N1Alpha', ...]. select ['Wind1VelX', 'Wind1VelY', 'Wind1VelZ'] as default value
                 ], style = {'float':'left', 'width': '200px', 'padding-left': '1.0rem'}),
                 html.Div([
                     html.Label(['Plot options:'], style={'font-weight':'bold', 'text-align':'center'}),
@@ -231,6 +226,7 @@ def make_card(idx, file_path, df):
           [[Input(f'df-{idx}', 'data') for idx in file_indices]])
 def manage_cards(var_openfast, df_dict_list):
     # df_dict_list = [{file1: df1}, {file2: df2}, ...]
+
     children = []
     for i, (idx, file_path) in enumerate(var_openfast['file_path'].items()):            # idx = file1, file2, ... where {'file1': 'of-output/NREL5MW_OC3_spar_0.out', 'file2': 'of-output/IEA15_0.out'}
         df_idx = [d.get(idx, None) for d in df_dict_list][i]
@@ -245,15 +241,18 @@ def manage_cards(var_openfast, df_dict_list):
 ###############################################
 
 @callback(Output('confirm-update-of', 'displayed'),
+          Output('var-openfast-graph', 'data', allow_duplicate=True),
+          State('var-openfast-graph', 'data'),
           Input('save-of', 'n_clicks'),
           Input('input-dict', 'data'),
           Input('signalx', 'value'),
           Input('signaly', 'value'),
           prevent_initial_call=True)
-def save_openfast(btn, input_dict, signalx, signaly):
-    if signalx is None or signaly is None:
-        raise PreventUpdate
+def save_openfast(of_options, btn, input_dict, signalx, signaly):
     
+    of_options['graph_x'] = signalx
+    of_options['graph_y'] = signaly
+
     if "save-of" == ctx.triggered_id:
         print('save button with ', signalx, signaly)
         input_dict['userPreferences']['openfast']['graph']['xaxis'] = signalx
@@ -262,6 +261,6 @@ def save_openfast(btn, input_dict, signalx, signaly):
         with open('test.yaml', 'w') as outfile:
             yaml.dump(input_dict, outfile, default_flow_style=False)
     
-        return True
+        return True, of_options
 
-    return False
+    return False, of_options

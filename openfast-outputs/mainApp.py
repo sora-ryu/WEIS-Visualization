@@ -43,12 +43,23 @@ navbar = dbc.NavbarSimple(
 
 # Wrap app with loading component
 # Whenever it needs some time for loading data, small progress bar would be appear in the middle of the screen.
+file_indices = ['file1', 'file2']       # Need to define as the way defined in .yaml file
+
 app.layout = dcc.Loading(
     id = 'loading_page_content',
     children = [
         html.Div(
             [   # Variable Settings to share over pages
                 dcc.Store(id='input-dict', data={}),
+                # OpenFAST related Data fetched from input-dict
+                dcc.Store(id='var-openfast', data={}),
+                dcc.Store(id='var-openfast-graph', data={}),
+                # Dataframe to share over functions - openfast .out file
+                 html.Div(
+                    [dcc.Store(id=f'df-{idx}', data={}) for idx in file_indices]      # dcc.Store(id='df-file1', data={}),          # {file1, df1}
+                ),
+                # Optimization related Data fetched from input-dict
+                dcc.Store(id='var-opt', data={}),
                 navbar,
                 dash.page_container
             ]

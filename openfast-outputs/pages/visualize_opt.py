@@ -46,6 +46,7 @@ def read_variables(input_dict):
     if input_dict is None or input_dict == {}:
         raise PreventUpdate
 
+    print('read from yaml')
     opt_options = {}
     var_opt = input_dict['userPreferences']['optimization']
     opt_options['root_file_path'] = input_dict['userOptions']['output_folder']
@@ -114,8 +115,6 @@ def define_iteration_with_dlc_layout():
 def layout():
 
     layout = dbc.Row([
-                # Optimization related Data fetched from input-dict
-                dcc.Store(id='var-opt', data={}),
                 dbc.Col(id='conv-layout', width=6),
                 dbc.Col(define_iteration_with_dlc_layout(), width=6),
 
@@ -433,6 +432,8 @@ def update_timegraphs(signaly):
 ###############################################
 
 @callback(Output('dummy-div', 'children'),
+          Output('var-opt', 'data', allow_duplicate=True),
+          State('var-opt', 'data'),
           Input('input-dict', 'data'),
           Input('signaly', 'value'),
           Input('x-stat-option', 'value'),
@@ -441,9 +442,9 @@ def update_timegraphs(signaly):
           Input('y-channel', 'value'),
           Input('time-signaly', 'value'),
           prevent_initial_call=True)
-def save_optimization(input_dict, signaly, x_chan_option, y_chan_option, x_channel, y_channel, time_signaly):
+def save_optimization(opt_options, input_dict, signaly, x_chan_option, y_chan_option, x_channel, y_channel, time_signaly):
 
-    print('Automatic save with ',signaly, x_chan_option, y_chan_option, x_channel, y_channel, time_signaly)
+    print('Automatic save with ', signaly, x_chan_option, y_chan_option, x_channel, y_channel, time_signaly)     # When time_signaly changed
 
     input_dict['userPreferences']['optimization']['convergence']['channels'] = signaly
     input_dict['userPreferences']['optimization']['dlc']['xaxis'] = x_channel
@@ -451,8 +452,15 @@ def save_optimization(input_dict, signaly, x_chan_option, y_chan_option, x_chann
     input_dict['userPreferences']['optimization']['dlc']['xaxis_stat'] = x_chan_option
     input_dict['userPreferences']['optimization']['dlc']['yaxis_stat'] = y_chan_option
     input_dict['userPreferences']['optimization']['timeseries']['channels'] = time_signaly
+    
+    opt_options['conv_y'] = signaly
+    opt_options['x_stat'] = x_chan_option
+    opt_options['y_stat'] = y_chan_option
+    opt_options['x'] = x_channel
+    opt_options['y'] = y_channel
+    opt_options['y_time'] = time_signaly
 
     with open('test.yaml', 'w') as outfile:
         yaml.dump(input_dict, outfile, default_flow_style=False)
     
-    return html.P('')
+    return html.P(''), opt_options
