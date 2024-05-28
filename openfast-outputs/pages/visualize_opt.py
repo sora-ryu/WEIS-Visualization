@@ -47,16 +47,26 @@ def read_variables(input_dict):
         raise PreventUpdate
 
     print('read from yaml')
+    # print(*find_file_path_from_tree(input_dict, 'IEA_22_Semi_0.p'))     # Test => Can be deleted
+    stats_paths = []
+    for paths in find_file_path_from_tree(input_dict['outputDirStructure'], 'summary_stats.p'):
+        print('paths: ', paths)
+        stats_paths.append('/'.join(k for k in paths if k not in ['dirs', 'files']))
+
     opt_options = {}
     var_opt = input_dict['userPreferences']['optimization']
     opt_options['root_file_path'] = input_dict['userOptions']['output_folder']
-    opt_options['log_file_path'] = '/'.join([input_dict['userOptions']['output_folder'], input_dict['userOptions']['sql_recorder_file']])
+    opt_options['log_file_path'] = '/'.join(k for k in next(find_file_path_from_tree(input_dict['outputDirStructure'], input_dict['userOptions']['sql_recorder_file'])) if k not in ['dirs', 'files'])
+    opt_options['stats_path'] = stats_paths
+    opt_options['case_matrix'] = '/'.join(k for k in next(find_file_path_from_tree(input_dict['outputDirStructure'], 'case_matrix.yaml')) if k not in ['dirs', 'files'])
     opt_options['conv_y'] = var_opt['convergence']['channels']
     opt_options['x_stat'] = var_opt['dlc']['xaxis_stat']
     opt_options['y_stat'] = var_opt['dlc']['yaxis_stat']
     opt_options['x'] = var_opt['dlc']['xaxis']
     opt_options['y'] = var_opt['dlc']['yaxis']
     opt_options['y_time'] = var_opt['timeseries']['channels']
+
+    print("Parse variables from opt..\n", opt_options)
 
     return opt_options
 
@@ -76,6 +86,7 @@ def read_log(log_file_path):
           Input('var-opt', 'data'))
 def define_convergence_layout(opt_options):
     # Read log file
+    print('log file path found.. ', opt_options['log_file_path'])
     read_log(opt_options['log_file_path'])
 
     # Layout for visualizing Conv-trend data
@@ -245,7 +256,7 @@ def update_dlc_outputs(clickData, opt_options):
     if clickData is None or opt_options is None:
         raise PreventUpdate
     
-    global iteration, stats, cm
+    global iteration, stats, iteration_path, cm
     iteration = clickData['points'][0]['x']
     title_phrase = f'DLC Analysis on Iteration {iteration}'
 
@@ -253,8 +264,9 @@ def update_dlc_outputs(clickData, opt_options):
     if not iteration in [0, 1, 51]:
         return title_phrase, html.Div([html.H5("Please select other iteration..")])
     
-    stats = read_per_iteration(iteration, opt_options['root_file_path'])
-    case_matrix_path = '/'.join([opt_options['root_file_path'], 'openfast_runs/rank_0/case_matrix.yaml'])
+    stats, iteration_path = read_per_iteration(iteration, opt_options['stats_path'])
+    # case_matrix_path = '/'.join([opt_options['root_file_path'], 'openfast_runs/rank_0/case_matrix.yaml'])
+    case_matrix_path = opt_options['case_matrix']
     cm = read_cm(case_matrix_path)
     multi_indices = sorted(stats.reset_index().keys()),
 
@@ -393,7 +405,7 @@ def display_outlier(clickData, opt_options):
     print("corresponding openfast run: ", of_run_num)
 
     global timeseries_data
-    filename, timeseries_data = get_timeseries_data(of_run_num, stats, iteration, opt_options['root_file_path'])
+    filename, timeseries_data = get_timeseries_data(of_run_num, stats, iteration_path)
     print(timeseries_data)
 
     sublayout = dcc.Loading(html.Div([
@@ -460,7 +472,6 @@ def save_optimization(opt_options, input_dict, signaly, x_chan_option, y_chan_op
     opt_options['y'] = y_channel
     opt_options['y_time'] = time_signaly
 
-    with open('test.yaml', 'w') as outfile:
-        yaml.dump(input_dict, outfile, default_flow_style=False)
+    update_yaml(input_dict, 'test.yaml')
     
     return html.P(''), opt_options

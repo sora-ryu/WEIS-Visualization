@@ -258,9 +258,8 @@ def save_openfast(of_options, btn, input_dict, signalx, signaly):
         input_dict['userPreferences']['openfast']['graph']['xaxis'] = signalx
         input_dict['userPreferences']['openfast']['graph']['yaxis'] = signaly
 
-        with open('test.yaml', 'w') as outfile:
-            yaml.dump(input_dict, outfile, default_flow_style=False)
-    
+        update_yaml(input_dict, 'test.yaml')
+        
         return True, of_options
 
     return False, of_options

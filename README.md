@@ -76,4 +76,4 @@ WEIS Output/
 - [x] Update the user preferences, variable settings from yaml file
 - [x] Trivial function updates - accept only yaml file for input, solve warning errors (nonexistent object at the callback functions)
 - [x] Maintain the progress even if changing tabs
-- [ ] Find file path from dir tree from yaml file
+- [x] Find file paths from dir tree from yaml file

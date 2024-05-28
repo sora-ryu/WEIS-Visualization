@@ -7,6 +7,7 @@ import numpy as np
 import openmdao.api as om
 import plotly.graph_objects as go
 import os
+import yaml
 
 try:
     import ruamel_yaml as ry
@@ -105,16 +106,19 @@ def load_yaml(fname_input, package=0):
 
 
 # TODO: Add below functions under WEIS/weis/visualization/utils.py
-def read_per_iteration(iteration, root_filepath):
-    iteration_path = '/'.join([root_filepath, 'openfast_runs/rank_0/iteration_{}'.format(iteration)])
-    stats = pd.read_pickle(iteration_path+'/summary_stats.p')
+def read_per_iteration(iteration, stats_paths):
+
+    stats_path_matched = [x for x in stats_paths if f'iteration_{iteration}' in x][0]
+    iteration_path = '/'.join(stats_path_matched.split('/')[:-1])
+    stats = pd.read_pickle(stats_path_matched)
     # dels = pd.read_pickle(iteration_path+'/DELs.p')
     # fst_vt = pd.read_pickle(iteration_path+'/fst_vt.p')
+    print('iteration path with ', iteration, ': ', stats_path_matched)
 
-    return stats
+    return stats, iteration_path
 
 # TODO: Add
-def get_timeseries_data(run_num, stats, iteration, root_filepath):
+def get_timeseries_data(run_num, stats, iteration_path):
     
     stats = stats.reset_index()     # make 'index' column that has elements of 'IEA_22_Semi_00, ...'
     print("stats\n", stats)
@@ -125,7 +129,8 @@ def get_timeseries_data(run_num, stats, iteration, root_filepath):
         filename = ('_'.join(filename.split('_')[:-1])+'_0_'+filename.split('_')[-1]+'.p').strip()
     
     # visualization_demo/openfast_runs/rank_0/iteration_0/timeseries/IEA_22_Semi_0_0.p
-    timeseries_path = '/'.join([root_filepath, 'openfast_runs/rank_0/iteration_{}/timeseries/{}'.format(iteration, filename)])
+    timeseries_path = '/'.join([iteration_path, 'timeseries', filename])
+    # timeseries_path = '/'.join([root_filepath, 'openfast_runs/rank_0/iteration_{}/timeseries/{}'.format(iteration, filename)])
     print('timeseries_path:\n', timeseries_path)
     timeseries_data = pd.read_pickle(timeseries_path)
 
@@ -179,3 +184,22 @@ def get_file_info(file_path):
     }
 
     return file_info
+
+# TODO: Add
+def find_file_path_from_tree(nested_dict, filename, prepath=()):
+    # Works for multi-keyed files
+    # Sample outputs: ('outputDirStructure', 'sample_test') ('outputDirStructure', 'sample_multi')
+    for k, v in nested_dict.items():
+        path = prepath + (k,)
+        if v == filename:
+            yield path + (v, )
+        elif isinstance(v, list) and filename in v:
+            yield path + (filename, )
+        elif hasattr(v, 'items'):
+            yield from find_file_path_from_tree(v, filename, path)
+
+
+# TODO: Add
+def update_yaml(input_dict, yaml_filepath):
+    with open(yaml_filepath, 'w') as outfile:
+        yaml.dump(input_dict, outfile, default_flow_style=False)
