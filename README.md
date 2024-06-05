@@ -74,9 +74,10 @@ WEIS Output/
 - [x] Maintain the progress even if changing tabs
 - [x] Find file paths from dir tree from yaml file
 - [x] Implement WISDEM Viz page - cost
-- [ ] Merge into WEIS
+- [x] Merge into WEIS - verify if it works well with 'weis-env'
 
 <!-- ## ETC (If needed)
+- [ ] Merge into WEIS - version match doesn't work.. assuming the reason=python version. Change the code to gain proper plot..
 - [ ] Implement WISDEM Viz page - general
 - [ ] Implement WISDEM Viz page - doc for customized viz function
 - [ ] Improve UI - drag and drop card -->
