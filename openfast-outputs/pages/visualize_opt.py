@@ -7,19 +7,12 @@ Callback function - Add controls to build the interaction. Automatically run thi
 
 # Import Packages
 import dash_bootstrap_components as dbc
-from dash import html, register_page, callback, Input, Output, dcc, State, ctx
-import pandas as pd
+from dash import html, register_page, callback, Input, Output, dcc, State
 import numpy as np
-import logging
-import yaml
-import ruamel_yaml as ry
-import openmdao.api as om
 from plotly.subplots import make_subplots
-import plotly.express as px
 import plotly.graph_objects as go
 import plotly.io as pio
 from dash.exceptions import PreventUpdate
-import json
 from utils.utils import *
 
 # Not working, import locally for now..
@@ -167,7 +160,7 @@ def get_trace(label):
     # Need to parse the data depending on the dimension of values
     if df[label][0].ndim == 0:      # For single value
         print('Single value')
-        trace_list.append(go.Scatter(y = df[label], mode = 'lines+markers', name = label))
+        trace_list.append(go.Scatter(y = [df[label][i] for i in range(len(df[label]))], mode = 'lines+markers', name = label))
     
     elif df[label][0].ndim == 1:    # For 1d-array
         print('1D-array')
