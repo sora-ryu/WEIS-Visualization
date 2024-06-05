@@ -68,12 +68,15 @@ WEIS Output/
 - [x] Implement WISDEM Viz page - blade
 
 ## Quarter 3
-- [ ] Implement WISDEM Viz page - cost
-- [ ] Implement WISDEM Viz page - general
-- [ ] Implement WISDEM Viz page - doc for customized viz function
-- [ ] Improve UI - drag and drop card
 - [x] Read user preferences
 - [x] Update the user preferences, variable settings from yaml file
 - [x] Trivial function updates - accept only yaml file for input, solve warning errors (nonexistent object at the callback functions)
 - [x] Maintain the progress even if changing tabs
 - [x] Find file paths from dir tree from yaml file
+- [x] Implement WISDEM Viz page - cost
+- [ ] Merge into WEIS
+
+<!-- ## ETC (If needed)
+- [ ] Implement WISDEM Viz page - general
+- [ ] Implement WISDEM Viz page - doc for customized viz function
+- [ ] Improve UI - drag and drop card -->

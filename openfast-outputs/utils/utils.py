@@ -203,3 +203,18 @@ def find_file_path_from_tree(nested_dict, filename, prepath=()):
 def update_yaml(input_dict, yaml_filepath):
     with open(yaml_filepath, 'w') as outfile:
         yaml.dump(input_dict, outfile, default_flow_style=False)
+
+
+# TODO: Add
+def read_cost_variables(labels, refturb_variables):
+    # Read tcc cost-related variables from CSV file
+    # TODO: Need verification on tcc
+    # diverse.pitch_cost [0.] / diverse.hub_cost [1345.73646459] / tcc.generator_cost_external [59315.10496779] / tcc.hub_cost [10496.74442381] / tcc.pitch_system_cost / tcc.spinner_cost / tcc.hub_system_cost ([200024.91787732])
+    # Turbine cost = Rotor + Nacelle + Tower costs
+
+    cost_matrix = [['Main Turbine Components', 'Cost']]
+
+    for l in labels:
+        cost_matrix.append([l, eval(refturb_variables[f'tcc.{l}_cost']['values'])[0]])
+    
+    return cost_matrix
