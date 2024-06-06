@@ -7,21 +7,12 @@ Callback function - Add controls to build the interaction. Automatically run thi
 
 # Import Packages
 import dash_bootstrap_components as dbc
-from dash import Dash, Input, Output, State, MATCH, ALL, callback, dcc, html, dash_table, register_page, ctx
+from dash import Input, Output, State, callback, dcc, html, register_page, ctx
 from dash.exceptions import PreventUpdate
-import copy
-import base64
-import io
-import os
 import datetime
-import plotly.express as px
 import plotly.graph_objects as go
-import plotly.tools as tls
 from plotly.subplots import make_subplots
-import dash_mantine_components as dmc
 import pandas as pd
-import logging
-import yaml
 from utils.utils import *
 
 register_page(

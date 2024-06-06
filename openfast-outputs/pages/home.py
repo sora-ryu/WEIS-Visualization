@@ -5,7 +5,6 @@ from dash.exceptions import PreventUpdate
 from utils.utils import *
 import yaml
 import base64
-import io
 
 register_page(
     __name__,

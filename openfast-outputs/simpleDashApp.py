@@ -1,3 +1,5 @@
+'''This is the page for visualizing table and plots'''
+
 # Import Packages
 from dash import Dash, Input, Output, callback, dcc, html, dash_table
 import copy
@@ -43,6 +45,16 @@ app.layout = html.Div(
     ]
 )
 
+# Add function to get the data from POST request
+def get_file_path(request):
+    if request.method == 'POST':
+        post_data = json.loads(request.body.decode("utf-8"))
+        value = post_data.get('data')
+        print(value)
+
+
+
+
 # Add controls to build the interaction
 @callback(
     Output(component_id="line", component_property="figure"),
@@ -50,7 +62,6 @@ app.layout = html.Div(
     [Input(component_id="signaly", component_property="value")],
     Input(component_id="plotOption", component_property="value")
 )
-
 def draw_graphs(signalx, signaly, plotOption):
 
     # fig = tls.make_subplots(rows=1, cols=1, shared_xaxes=True, verical_spacing=0.009, horizontal_spacing=0.009)
