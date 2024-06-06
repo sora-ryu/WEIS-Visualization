@@ -2,17 +2,8 @@
 
 # Import Packages
 import dash
-from dash import Dash, Input, Output, State, callback, dcc, html, dash_table
-import io
-import base64
-import datetime
-import plotly.express as px
-import plotly.graph_objects as go
-import plotly.tools as tls
-from plotly.subplots import make_subplots
-import dash_mantine_components as dmc
+from dash import Dash, dcc, html
 import dash_bootstrap_components as dbc
-import pandas as pd
 import logging
 
 

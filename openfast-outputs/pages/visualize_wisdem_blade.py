@@ -4,22 +4,14 @@
 # TODO: Do we need dropout list here to let user change variables? (Show default settings..)
 
 import dash_bootstrap_components as dbc
-from dash import html, register_page, callback, Input, Output, dcc, State
+from dash import html, register_page, callback, Input, Output, dcc
 import pandas as pd
 import numpy as np
-import logging
-import yaml
-import ruamel_yaml as ry
-import openmdao.api as om
 from plotly.subplots import make_subplots
-import plotly.express as px
 import plotly.graph_objects as go
 from dash.exceptions import PreventUpdate
-import json
-import os
 
 from utils.utils import *
-from wisdem.glue_code.runWISDEM import load_wisdem
 
 register_page(
     __name__,
@@ -35,24 +27,25 @@ def read_variables(input_dict):
     if input_dict is None or input_dict == {}:
         raise PreventUpdate
     
+    # Read WISDEM output data
+    global refturb, refturb_variables
+
+    wisdem_output_path = input_dict['userPreferences']['wisdem']['output_path']
+    npz_filepath = '/'.join([wisdem_output_path, 'refturb_output.npz'])
+    csv_filepath = '/'.join([wisdem_output_path, 'refturb_output.csv'])
+    refturb = np.load(npz_filepath)
+    refturb_variables = pd.read_csv(csv_filepath).set_index('variables').to_dict('index')
+
     blade_options = {}
-    blade_options['x'] = input_dict['userPreferences']['wisdem']['blade_xaxis']
-    blade_options['ys'] = input_dict['userPreferences']['wisdem']['blade_shape_yaxis']
-    blade_options['ys_struct_log'] = input_dict['userPreferences']['wisdem']['blade_struct_yaxis_log']
-    blade_options['ys_struct'] = input_dict['userPreferences']['wisdem']['blade_struct_yaxis']
+    blade_options['x'] = input_dict['userPreferences']['wisdem']['blade']['xaxis']
+    blade_options['ys'] = input_dict['userPreferences']['wisdem']['blade']['shape_yaxis']
+    blade_options['ys_struct_log'] = input_dict['userPreferences']['wisdem']['blade']['struct_yaxis_log']
+    blade_options['ys_struct'] = input_dict['userPreferences']['wisdem']['blade']['struct_yaxis']
 
     return blade_options
 
 
 def layout():
-    # Read numpy file
-    global refturb, refturb_variables
-
-    # TODO: Add below file path to yaml file
-    npz_filepath = "/Users/sryu/Desktop/FY24/WEIS/WISDEM/examples/02_reference_turbines/outputs/refturb_output.npz"
-    csv_filepath = "/Users/sryu/Desktop/FY24/WEIS/WISDEM/examples/02_reference_turbines/outputs/refturb_output.csv"     # For description
-    refturb = np.load(npz_filepath)
-    refturb_variables = pd.read_csv(csv_filepath).set_index('variables').to_dict('index')
 
     description_layout = dbc.Card(
                             [

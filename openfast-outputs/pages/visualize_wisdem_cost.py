@@ -1,7 +1,7 @@
 '''This is the page for visualize the WISDEM outputs specialized in calculating costs'''
 
 import dash_bootstrap_components as dbc
-from dash import html, register_page, callback, Input, Output, dcc, State
+from dash import register_page, callback, Input, Output, dcc
 import pandas as pd
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
@@ -9,7 +9,6 @@ from dash.exceptions import PreventUpdate
 import plotly.figure_factory as ff
 
 from utils.utils import *
-from wisdem.glue_code.runWISDEM import load_wisdem
 
 register_page(
     __name__,
