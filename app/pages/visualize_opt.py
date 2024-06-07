@@ -459,6 +459,6 @@ def save_optimization(opt_options, input_dict, signaly, x_chan_option, y_chan_op
     opt_options['y'] = y_channel
     opt_options['y_time'] = time_signaly
 
-    update_yaml(input_dict, 'test.yaml')
+    update_yaml(input_dict, input_dict['filename'])
     
     return html.P(''), opt_options

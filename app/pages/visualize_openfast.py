@@ -250,7 +250,7 @@ def save_openfast(of_options, btn, input_dict, signalx, signaly):
         input_dict['userPreferences']['openfast']['graph']['xaxis'] = signalx
         input_dict['userPreferences']['openfast']['graph']['yaxis'] = signaly
 
-        update_yaml(input_dict, 'test.yaml')
+        update_yaml(input_dict, input_dict['filename'])
         
         return True, of_options
 

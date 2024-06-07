@@ -91,6 +91,7 @@ def check_input_file(contents, filename):
     if 'yaml' in filename:
         print('\nInput Filename: ', filename)
         input_dict = parse_yaml(contents)
+        input_dict['filename'] = filename
 
         return False, input_dict, html.Div([html.H5("Uploaded successfully")])          # TODO: Show file tree instead?
     
