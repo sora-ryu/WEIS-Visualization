@@ -5,7 +5,56 @@ import dash
 from dash import Dash, dcc, html
 import dash_bootstrap_components as dbc
 import logging
+import yaml
+import io
+import argparse
 
+
+# TODO: move this to viz utils
+def checkPort(port, host="0.0.0.0"):
+    import socket
+    # check port availability and then close the socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    result = False
+    try:
+        sock.bind((host, port))
+        result = True
+    except:
+        result = False
+
+    sock.close()
+    return result
+
+
+# TODO: move this to viz utils
+def parse_yaml(file_path):
+    '''
+    Parse the data contents in dictionary format
+    '''
+    # print('Reading the input yaml file..')
+    try:
+        with io.open(file_path, 'r') as stream:
+            dict = yaml.safe_load(stream)
+        
+        dict['yaml_path'] = file_path
+        # print('input file dict:\n', dict)
+        return dict
+    
+    except FileNotFoundError:
+        print('Could not locate the input yaml file..')
+        exit()
+    
+    except Exception as e:
+        print(e)
+        exit()
+
+
+parser = argparse.ArgumentParser(description='WEIS Visualization App')
+parser.add_argument('--port', type=int, default=8050, help='Port number to run the app')
+parser.add_argument('--host', type=str, default="0.0.0.0", help='Host IP to run the app')
+parser.add_argument('--debug', type=bool, default=False, help='Debug mode')
+parser.add_argument('--yaml', type=str, default='test.yaml', help='Path to the input yaml file')
+args = parser.parse_args()
 
 # Initialize the app - Internally starts the Flask Server
 # Incorporate a Dash Mantine theme
@@ -41,7 +90,7 @@ app.layout = dcc.Loading(
     children = [
         html.Div(
             [   # Variable Settings to share over pages
-                dcc.Store(id='input-dict', data={}),
+                dcc.Store(id='input-dict', data=parse_yaml(args.yaml)),
                 # OpenFAST related Data fetched from input-dict
                 dcc.Store(id='var-openfast', data={}),
                 dcc.Store(id='var-openfast-graph', data={}),
@@ -60,32 +109,9 @@ app.layout = dcc.Loading(
     fullscreen = True
 )
 
-# might have to move this to viz utils
-def checkPort(port, host="0.0.0.0"):
-    import socket
-    # check port availability and then close the socket
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    result = False
-    try:
-        sock.bind((host, port))
-        result = True
-    except:
-        result = False
-
-    sock.close()
-    return result
-
 
 # Run the app
 if __name__ == "__main__":
-
-    import argparse
-    parser = argparse.ArgumentParser(description='WEIS Visualization App')
-    parser.add_argument('--port', type=int, default=8050, help='Port number to run the app')
-    parser.add_argument('--host', type=str, default="0.0.0.0", help='Host IP to run the app')
-    parser.add_argument('--debug', type=bool, default=False, help='Debug mode')
-
-    args = parser.parse_args()
 
     # test the port availability, flask calls the main function twice in debug mode
     if not checkPort(args.port, args.host) and not args.debug:
@@ -96,4 +122,5 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.DEBUG)        # For debugging
     app.run(debug=args.debug, host=args.host, port=args.port)
+
 

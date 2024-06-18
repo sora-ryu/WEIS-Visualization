@@ -40,10 +40,11 @@ def read_default_variables(input_dict):
     var_openfast = input_dict['userPreferences']['openfast']
     var_files = var_openfast['file_path']
     dfs = store_dataframes(var_files)       # [{file1: df1, file2: df2, ... }]
-    print('read from yaml')
 
     of_options['graph_x'] = var_openfast['graph']['xaxis']
     of_options['graph_y'] = var_openfast['graph']['yaxis']
+
+    print("Parse variables from open fast..\n", of_options)
 
     return var_openfast, of_options, dfs
 
@@ -250,7 +251,7 @@ def save_openfast(of_options, btn, input_dict, signalx, signaly):
         input_dict['userPreferences']['openfast']['graph']['xaxis'] = signalx
         input_dict['userPreferences']['openfast']['graph']['yaxis'] = signaly
 
-        update_yaml(input_dict, input_dict['filename'])
+        update_yaml(input_dict, input_dict['yaml_path'])
         
         return True, of_options
 

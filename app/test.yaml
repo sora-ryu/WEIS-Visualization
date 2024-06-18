@@ -1,4 +1,3 @@
-filename: require.yaml
 outputDirStructure:
   dirs:
     InitialDW:
@@ -319,16 +318,16 @@ userOptions:
   inverse_design: false
   optimization: true
   output_fileName: IEA-22-280-RWT
-  output_folder: InitialDW
+  output_folder: /Users/sryu/Desktop/FY24/WEIS-Visualization/data/InitialDW     # Absolute path
   sql_recorder: true
   sql_recorder_file: log_opt.sql
 userPreferences:
   openfast:
     file_path:
-      file1: of-output/NREL5MW_OC3_spar_0.out
-      file2: of-output/IEA15_0.out
-      file3: of-output/IEA15_1.out
-      file4: of-output/IEA15_2.out
+      file1: /Users/sryu/Desktop/FY24/WEIS-Visualization/data/of-output/NREL5MW_OC3_spar_0.out    # Absolute path
+      file2: /Users/sryu/Desktop/FY24/WEIS-Visualization/data/of-output/IEA15_0.out               # Absolute path
+      file3: None
+      file4: None
       file5: None
     graph:
       xaxis: Time
@@ -369,4 +368,5 @@ userPreferences:
       - rotorse.EIyy_N*m**2
       - rotorse.GJ_N*m**2
       xaxis: rotorse.rc.s
-    output_path: /Users/sryu/Desktop/FY24/WEIS/WISDEM/examples/02_reference_turbines/outputs/
+    output_path: /Users/sryu/Desktop/FY24/WEIS/WISDEM/examples/02_reference_turbines/outputs/           # Absolute path
+yaml_path: /Users/sryu/Desktop/FY24/WEIS-Visualization/app/test.yaml

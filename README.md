@@ -24,7 +24,7 @@ app/
 conda activate weis-env                                                   # Activate the new environment
 git clone https://github.com/sora-ryu/WEIS-Visualization.git              # Clone the repository
 cd app/
-python mainApp.py --port [port_number] --host [host_number] --debug [debug_flag]  # Run the App (e.g., python mainApp.py --port 8060 --host 0.0.0.0 --debug False)
+python mainApp.py --port [port_number] --host [host_number] --debug [debug_flag] --yaml [input_yaml_file_path]  # Run the App (e.g., python mainApp.py --port 8060 --host 0.0.0.0 --debug False --yaml test.yaml)
 ```
 ## Results
 ### OpenFAST
