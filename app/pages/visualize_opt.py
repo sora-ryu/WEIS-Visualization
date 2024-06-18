@@ -9,6 +9,7 @@ Callback function - Add controls to build the interaction. Automatically run thi
 import dash_bootstrap_components as dbc
 from dash import html, register_page, callback, Input, Output, dcc, State
 import numpy as np
+import os
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import plotly.io as pio
@@ -33,22 +34,23 @@ pio.templates.default = "ggplot2"
 def read_variables(input_dict):
     if input_dict is None or input_dict == {}:
         raise PreventUpdate
+    
+    opt_options = {}
+    var_opt = input_dict['userPreferences']['optimization']
+    opt_options['root_file_path'] = '/'.join(input_dict['userOptions']['output_folder'].split('/')[:-1])           # Remove the last output folder name for future path join
+    opt_options['log_file_path'] = os.path.join(opt_options['root_file_path'], '/'.join(k for k in next(find_file_path_from_tree(input_dict['outputDirStructure'], input_dict['userOptions']['sql_recorder_file'])) if k not in ['dirs', 'files']))
 
     stats_paths = []
     for paths in find_file_path_from_tree(input_dict['outputDirStructure'], 'summary_stats.p'):
-        stats_paths.append('/'.join(k for k in paths if k not in ['dirs', 'files']))
+        stats_paths.append(os.path.join(opt_options['root_file_path'], '/'.join(k for k in paths if k not in ['dirs', 'files'])))
     
     iterations = []
     for iteration_nums in find_iterations(input_dict['outputDirStructure']):
         iterations.append(iteration_nums)
 
-    opt_options = {}
-    var_opt = input_dict['userPreferences']['optimization']
-    opt_options['root_file_path'] = input_dict['userOptions']['output_folder']
-    opt_options['log_file_path'] = '/'.join(opt_options['root_file_path'].split('/')[:-1])+'/'+'/'.join(k for k in next(find_file_path_from_tree(input_dict['outputDirStructure'], input_dict['userOptions']['sql_recorder_file'])) if k not in ['dirs', 'files'])
     opt_options['stats_path'] = stats_paths
     opt_options['iterations'] = iterations
-    opt_options['case_matrix'] = '/'.join(k for k in next(find_file_path_from_tree(input_dict['outputDirStructure'], 'case_matrix.yaml')) if k not in ['dirs', 'files'])
+    opt_options['case_matrix'] = os.path.join(opt_options['root_file_path'], '/'.join(k for k in next(find_file_path_from_tree(input_dict['outputDirStructure'], 'case_matrix.yaml')) if k not in ['dirs', 'files']))
     opt_options['conv_y'] = var_opt['convergence']['channels']
     opt_options['x_stat'] = var_opt['dlc']['xaxis_stat']
     opt_options['y_stat'] = var_opt['dlc']['yaxis_stat']
@@ -227,7 +229,7 @@ def toggle_iteration_with_dlc_layout(clickData, is_open):
     '''
     If iteration has been clicked, open the card layout on right side.
     '''
-    if clickData is None:
+    if clickData is None or is_open is True:
         raise PreventUpdate
     
     return toggle(clickData, is_open)
@@ -460,6 +462,6 @@ def save_optimization(opt_options, input_dict, signaly, x_chan_option, y_chan_op
     opt_options['y'] = y_channel
     opt_options['y_time'] = time_signaly
 
-    update_yaml(input_dict, input_dict['filename'])
+    update_yaml(input_dict, input_dict['yaml_path'])
     
     return html.P(''), opt_options

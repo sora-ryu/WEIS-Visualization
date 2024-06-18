@@ -37,6 +37,8 @@ def read_variables(input_dict):
     cost_options['rotor'] = read_cost_variables(rotor_labels, refturb_variables)
     cost_options['nacelle'] = read_cost_variables(nacelle_labels, refturb_variables)
 
+    print("Parse variables from wisdem cost..\n", cost_options)
+
     return cost_options
 
 

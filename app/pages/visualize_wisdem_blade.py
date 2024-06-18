@@ -41,6 +41,8 @@ def read_variables(input_dict):
     blade_options['ys_struct_log'] = input_dict['userPreferences']['wisdem']['blade']['struct_yaxis_log']
     blade_options['ys_struct'] = input_dict['userPreferences']['wisdem']['blade']['struct_yaxis']
 
+    print("Parse variables from wisdem blade..\n", blade_options)
+
     return blade_options
 
 
