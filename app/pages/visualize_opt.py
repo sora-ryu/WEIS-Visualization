@@ -45,7 +45,7 @@ def read_variables(input_dict):
     opt_options = {}
     var_opt = input_dict['userPreferences']['optimization']
     opt_options['root_file_path'] = input_dict['userOptions']['output_folder']
-    opt_options['log_file_path'] = '/'.join(k for k in next(find_file_path_from_tree(input_dict['outputDirStructure'], input_dict['userOptions']['sql_recorder_file'])) if k not in ['dirs', 'files'])
+    opt_options['log_file_path'] = '/'.join(opt_options['root_file_path'].split('/')[:-1])+'/'+'/'.join(k for k in next(find_file_path_from_tree(input_dict['outputDirStructure'], input_dict['userOptions']['sql_recorder_file'])) if k not in ['dirs', 'files'])
     opt_options['stats_path'] = stats_paths
     opt_options['iterations'] = iterations
     opt_options['case_matrix'] = '/'.join(k for k in next(find_file_path_from_tree(input_dict['outputDirStructure'], 'case_matrix.yaml')) if k not in ['dirs', 'files'])
@@ -145,6 +145,7 @@ def get_trace(label):
     '''
     Add the line graph (trace) for each channel (label)
     '''
+    print(df)
     assert isinstance(df[label][0], np.ndarray) == True
     trace_list = []
     # print(f'{label}:')
