@@ -147,6 +147,7 @@ def get_trace(label):
     '''
     Add the line graph (trace) for each channel (label)
     '''
+    print(df)
     assert isinstance(df[label][0], np.ndarray) == True
     trace_list = []
     # print(f'{label}:')
