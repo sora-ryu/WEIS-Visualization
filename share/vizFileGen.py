@@ -125,7 +125,7 @@ class WEISVizInputFileGenerator:
         self.vizInput['userPreferences']['wisdem']['blade']['struct_yaxis'] = ['rotorse.rhoA_kg/m']
         self.vizInput['userPreferences']['wisdem']['blade']['struct_yaxis_log'] = ['rotorse.EA_N', 'rotorse.EIxx_N*m**2', 'rotorse.EIyy_N*m**2', 'rotorse.GJ_N*m**2']
         self.vizInput['userPreferences']['wisdem']['blade']['xaxis'] = 'rotorse.rc.s'
-        self.vizInput['userPreferences']['wisdem']['blade']['output_path'] = '~/weis-viz'
+        self.vizInput['userPreferences']['wisdem']['output_path'] = os.path.join(os.path.split(self.fname_opt_options)[0], self.opt_options['general']['folder_output'])
 
     def getOutputDirStructure(self):
         # self.vizInput['outputDirStructure'] = path_to_dict(self.vizInput['userOptions']['output_folder'])
