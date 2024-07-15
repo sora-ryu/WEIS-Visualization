@@ -67,11 +67,11 @@ class WEISVizInputFileGenerator:
                 - floating.memgrp1.outer_diameter_in
                 dlc:
                 xaxis: Wind1VelX
-                xaxis_stat: max
+                xaxis_stat: mean
                 yaxis:
                 - Wind1VelY
                 - Wind1VelZ
-                yaxis_stat: min
+                yaxis_stat: max
                 timeseries:
                 channels:
                 - Wind1VelX
@@ -113,9 +113,9 @@ class WEISVizInputFileGenerator:
         self.vizInput['userPreferences']['optimization']['convergence']['channels'] = ['raft.pitch_period', 'floatingse.constr_draft_heel_margin', 'floating.jointdv_0', 'floating.memgrp1.outer_diameter_in']
         self.vizInput['userPreferences']['optimization']['dlc'] = {}
         self.vizInput['userPreferences']['optimization']['dlc']['xaxis'] = 'Wind1VelX'
-        self.vizInput['userPreferences']['optimization']['dlc']['xaxis_stat'] = 'max'
+        self.vizInput['userPreferences']['optimization']['dlc']['xaxis_stat'] = 'mean'
         self.vizInput['userPreferences']['optimization']['dlc']['yaxis'] = ['Wind1VelY', 'Wind1VelZ']
-        self.vizInput['userPreferences']['optimization']['dlc']['yaxis_stat'] = 'min'
+        self.vizInput['userPreferences']['optimization']['dlc']['yaxis_stat'] = 'max'
         self.vizInput['userPreferences']['optimization']['timeseries'] = {}
         self.vizInput['userPreferences']['optimization']['timeseries']['channels'] = ['Wind1VelX', 'Wind1VelY', 'Wind1VelZ']
 

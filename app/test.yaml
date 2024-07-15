@@ -344,11 +344,11 @@ userPreferences:
       - floating.memgrp1.outer_diameter_in
     dlc:
       xaxis: Wind1VelX
-      xaxis_stat: max
+      xaxis_stat: mean
       yaxis:
       - Wind1VelY
       - Wind1VelZ
-      yaxis_stat: min
+      yaxis_stat: max
     timeseries:
       channels:
       - Wind1VelX
