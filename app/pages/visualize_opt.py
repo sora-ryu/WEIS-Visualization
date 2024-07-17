@@ -394,7 +394,7 @@ def display_outlier(clickData, opt_options):
     of_run_num = clickData['points'][0]['pointIndex']
     print("corresponding openfast run: ", of_run_num)
 
-    global timeseries_data
+    global filename, timeseries_data
     filename, timeseries_data = get_timeseries_data(of_run_num, stats, iteration_path)
     print(timeseries_data)
 
@@ -416,15 +416,37 @@ def update_timegraphs(signaly):
     if signaly is None:
         raise PreventUpdate
 
-    fig = make_subplots(rows = 1, cols = 1)
-    for col_idx, label in enumerate(signaly):
+    # 1) Single plot
+    # fig = make_subplots(rows = 1, cols = 1)
+    # for col_idx, label in enumerate(signaly):
+    #     fig.append_trace(go.Scatter(
+    #         x = timeseries_data['Time'],
+    #         y = timeseries_data[label],
+    #         mode = 'lines',
+    #         name = label),
+    #         row = 1,
+    #         col = 1)
+    
+    # 2) Multiple subplots
+    fig = make_subplots(rows = len(signaly), cols = 1)
+    for row_idx, label in enumerate(signaly):
         fig.append_trace(go.Scatter(
             x = timeseries_data['Time'],
             y = timeseries_data[label],
             mode = 'lines',
             name = label),
-            row = 1,
+            row = row_idx + 1,
             col = 1)
+        fig.update_yaxes(title_text=label, row=row_idx+1, col=1)
+    
+    fig.update_layout(
+        height=200 * len(signaly),
+        title=f"{filename}",
+        title_x=0.5)
+    
+    # Define the graph layout where it includes the rendered figure
+    fig.update_xaxes(title_text='Time', row=len(signaly), col=1)
+
     
     return fig
 
