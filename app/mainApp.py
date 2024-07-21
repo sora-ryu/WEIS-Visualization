@@ -5,48 +5,8 @@ import dash
 from dash import Dash, dcc, html
 import dash_bootstrap_components as dbc
 import logging
-import yaml
-import io
 import argparse
-
-
-# TODO: move this to viz utils
-def checkPort(port, host="0.0.0.0"):
-    import socket
-    # check port availability and then close the socket
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    result = False
-    try:
-        sock.bind((host, port))
-        result = True
-    except:
-        result = False
-
-    sock.close()
-    return result
-
-
-# TODO: move this to viz utils
-def parse_yaml(file_path):
-    '''
-    Parse the data contents in dictionary format
-    '''
-    # print('Reading the input yaml file..')
-    try:
-        with io.open(file_path, 'r') as stream:
-            dict = yaml.safe_load(stream)
-        
-        dict['yaml_path'] = file_path
-        # print('input file dict:\n', dict)
-        return dict
-    
-    except FileNotFoundError:
-        print('Could not locate the input yaml file..')
-        exit()
-    
-    except Exception as e:
-        print(e)
-        exit()
+from weis.visualization.utils import checkPort, parse_yaml
 
 
 parser = argparse.ArgumentParser(description='WEIS Visualization App')
