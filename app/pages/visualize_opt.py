@@ -27,6 +27,10 @@ register_page(
 pio.templates.default = "ggplot2"
 
 
+#################################################################
+#   Read Optimization related variables/data from yaml file
+#################################################################
+
 def read_opt_vars_per_type(input_dict):
     opt_options = {}
     opt_type_reference = {1: 'RAFT', 2: 'OpenFAST'}     # TODO: Expand other types of optimizations
@@ -37,17 +41,32 @@ def read_opt_vars_per_type(input_dict):
     var_opt = input_dict['userPreferences']['optimization']
     opt_options['conv_y'] = var_opt['convergence']['channels']
 
-    # opt_type = input_dict['userOptions']['optimization']['type']
+    opt_options['opt_type'] = opt_type_reference[input_dict['userOptions']['optimization']['type']]
+
+    if opt_options['opt_type'] == 'RAFT':
+        opt_options['raft_design_dir'] = '/'.join(opt_options['log_file_path'].split('/')[:-1]) + '/raft_designs'
+    
+    elif opt_options['opt_type'] == 'OpenFAST':
+        stats_paths = []
+        for paths in find_file_path_from_tree(input_dict['outputDirStructure'], 'summary_stats.p'):
+            stats_paths.append(os.path.join(opt_options['root_file_path'], '/'.join(k for k in paths if k not in ['dirs', 'files'])))
+        
+        iterations = []
+        for iteration_nums in find_iterations(input_dict['outputDirStructure']):
+            iterations.append(iteration_nums)
+
+        opt_options['stats_path'] = stats_paths
+        opt_options['iterations'] = iterations
+        opt_options['case_matrix'] = os.path.join(opt_options['root_file_path'], '/'.join(k for k in next(find_file_path_from_tree(input_dict['outputDirStructure'], 'case_matrix.yaml')) if k not in ['dirs', 'files']))
+        opt_options['x_stat'] = var_opt['dlc']['xaxis_stat']
+        opt_options['y_stat'] = var_opt['dlc']['yaxis_stat']
+        opt_options['x'] = var_opt['dlc']['xaxis']
+        opt_options['y'] = var_opt['dlc']['yaxis']
+        opt_options['y_time'] = var_opt['timeseries']['channels']
+        
 
     return opt_options
 
-    
-
-
-
-###############################################
-#   Read Optimization related variables/data from yaml file
-###############################################
 
 @callback(Output('var-opt', 'data'),
           Input('input-dict', 'data'))
@@ -57,33 +76,7 @@ def read_variables(input_dict):
     
     if input_dict['userOptions']['optimization']['status'] == True:
         opt_options = read_opt_vars_per_type(input_dict)
-
-
-    '''
-    # Previous codes before classifying by types
-    opt_options = {}
-    var_opt = input_dict['userPreferences']['optimization']
-    opt_options['root_file_path'] = '/'.join(input_dict['userOptions']['output_folder'].split('/')[:-1])           # Remove the last output folder name for future path join
-    opt_options['log_file_path'] = os.path.join(opt_options['root_file_path'], '/'.join(k for k in next(find_file_path_from_tree(input_dict['outputDirStructure'], input_dict['userOptions']['sql_recorder_file'])) if k not in ['dirs', 'files']))
-
-    stats_paths = []
-    for paths in find_file_path_from_tree(input_dict['outputDirStructure'], 'summary_stats.p'):
-        stats_paths.append(os.path.join(opt_options['root_file_path'], '/'.join(k for k in paths if k not in ['dirs', 'files'])))
     
-    iterations = []
-    for iteration_nums in find_iterations(input_dict['outputDirStructure']):
-        iterations.append(iteration_nums)
-
-    opt_options['stats_path'] = stats_paths
-    opt_options['iterations'] = iterations
-    opt_options['case_matrix'] = os.path.join(opt_options['root_file_path'], '/'.join(k for k in next(find_file_path_from_tree(input_dict['outputDirStructure'], 'case_matrix.yaml')) if k not in ['dirs', 'files']))
-    opt_options['conv_y'] = var_opt['convergence']['channels']
-    opt_options['x_stat'] = var_opt['dlc']['xaxis_stat']
-    opt_options['y_stat'] = var_opt['dlc']['yaxis_stat']
-    opt_options['x'] = var_opt['dlc']['xaxis']
-    opt_options['y'] = var_opt['dlc']['yaxis']
-    opt_options['y_time'] = var_opt['timeseries']['channels']
-    '''
 
     print("Parse variables from optimization..\n", opt_options)
 
@@ -107,11 +100,11 @@ def define_convergence_layout(opt_options):
     # Read log file
     read_log(opt_options['log_file_path'])
 
-
     # Generate RAFT Output Files
-    # raft_design_dir = '/projects/weis/sryu/visualization_cases/1_raft_opt/raft_designs'
-    # raft_design_dir = '/'.join(opt_options['log_file_path'].split('/')[:-1]) + '/raft_designs'
-    # generate_raft_img(raft_design_dir, log_data)
+    if opt_options['opt_type'] == 'RAFT':
+        plot_dir = os.path.join(opt_options['raft_design_dir'],'..','raft_plots')
+        if not os.path.isdir(plot_dir):
+            generate_raft_img(opt_options['raft_design_dir'], plot_dir, log_data)
 
     # Layout for visualizing Conv-trend data
     convergence_layout = dbc.Card(
@@ -283,99 +276,91 @@ def update_dlc_outputs(clickData, opt_options):
     
     global iteration, stats, iteration_path, cm
     iteration = clickData['points'][0]['x']
-    title_phrase = f'Iteration {iteration}'
-
-    sublayout = html.Div([
-        dcc.Graph(id='dlc-output', figure=empty_figure()),                          # Related functions: update_dlc_plot()
-    ])
-
-    return title_phrase, sublayout
+    title_phrase = f'{opt_options['opt_type']} Optimization Iteration {iteration}'
 
 
-    '''
-    # OpenFAST DLC
-    global iteration, stats, iteration_path, cm
-    iteration = clickData['points'][0]['x']
-    title_phrase = f'DLC Analysis on Iteration {iteration}'
-    
-    if not iteration in opt_options['iterations']:
-        return title_phrase, html.Div([html.H5("Please select other iteration..")])
-    
-    stats, iteration_path = read_per_iteration(iteration, opt_options['stats_path'])
-    case_matrix_path = opt_options['case_matrix']
-    cm = read_cm(case_matrix_path)
-    multi_indices = sorted(stats.reset_index().keys()),
+    # 1) RAFT
+    if opt_options['opt_type'] == 'RAFT':
+        sublayout = html.Div([
+            dcc.Graph(id='dlc-output', figure=empty_figure()),                          # Related functions: update_dlc_plot()
+        ])
 
-    # Define sublayout that includes user customized panel for visualizing DLC analysis
-    sublayout = html.Div([
-        html.H5("X Channel Statistics"),
-        html.Div([dbc.RadioItems(
-            id='x-stat-option',
-            className="btn-group",
-            inputClassName="btn-check",
-            labelClassName="btn btn-outline-primary",
-            labelCheckedClassName="active",
-            options=[
-                {'label': 'min', 'value': 'min'},
-                {'label': 'max', 'value': 'max'},
-                {'label': 'std', 'value': 'std'},
-                {'label':  'mean', 'value': 'mean'},
-                {'label': 'median', 'value': 'median'},
-                {'label': 'abs', 'value': 'abs'},
-                {'label': 'integrated', 'value': 'integrated'}],
-            value=opt_options['x_stat']
-        )], className='radio-group'),
-        html.H5("Y Channel Statistics"),
-        html.Div([dbc.RadioItems(
-            id='y-stat-option',
-            className="btn-group",
-            inputClassName="btn-check",
-            labelClassName="btn btn-outline-primary",
-            labelCheckedClassName="active",
-            options=[
-                {'label': 'min', 'value': 'min'},
-                {'label': 'max', 'value': 'max'},
-                {'label': 'std', 'value': 'std'},
-                {'label':  'mean', 'value': 'mean'},
-                {'label': 'median', 'value': 'median'},
-                {'label': 'abs', 'value': 'abs'},
-                {'label': 'integrated', 'value': 'integrated'}],
-            value=opt_options['y_stat']
-        )], className='radio-group'),
-        html.H5("X Channel"),
-        dcc.Dropdown(id='x-channel', options=sorted(set([multi_key[0] for idx, multi_key in enumerate(multi_indices[0])])), value=opt_options['x']),
-        html.H5("Y Channel"),
-        dcc.Dropdown(id='y-channel', options=sorted(set([multi_key[0] for idx, multi_key in enumerate(multi_indices[0])])), value=opt_options['y'], multi=True),
-        dcc.Graph(id='dlc-output', figure=empty_figure()),                          # Related functions: update_dlc_plot()
-    ])
+    # 2) OpenFAST DLC
+    elif opt_options['opt_type'] == 'OpenFAST':
+        stats, iteration_path = read_per_iteration(iteration, opt_options['stats_path'])
+        case_matrix_path = opt_options['case_matrix']
+        cm = read_cm(case_matrix_path)
+        multi_indices = sorted(stats.reset_index().keys()),
+
+        # Define sublayout that includes user customized panel for visualizing DLC analysis
+        sublayout = html.Div([
+            html.H5("X Channel Statistics"),
+            html.Div([dbc.RadioItems(
+                id='x-stat-option',
+                className="btn-group",
+                inputClassName="btn-check",
+                labelClassName="btn btn-outline-primary",
+                labelCheckedClassName="active",
+                options=[
+                    {'label': 'min', 'value': 'min'},
+                    {'label': 'max', 'value': 'max'},
+                    {'label': 'std', 'value': 'std'},
+                    {'label':  'mean', 'value': 'mean'},
+                    {'label': 'median', 'value': 'median'},
+                    {'label': 'abs', 'value': 'abs'},
+                    {'label': 'integrated', 'value': 'integrated'}],
+                value=opt_options['x_stat']
+            )], className='radio-group'),
+            html.H5("Y Channel Statistics"),
+            html.Div([dbc.RadioItems(
+                id='y-stat-option',
+                className="btn-group",
+                inputClassName="btn-check",
+                labelClassName="btn btn-outline-primary",
+                labelCheckedClassName="active",
+                options=[
+                    {'label': 'min', 'value': 'min'},
+                    {'label': 'max', 'value': 'max'},
+                    {'label': 'std', 'value': 'std'},
+                    {'label':  'mean', 'value': 'mean'},
+                    {'label': 'median', 'value': 'median'},
+                    {'label': 'abs', 'value': 'abs'},
+                    {'label': 'integrated', 'value': 'integrated'}],
+                value=opt_options['y_stat']
+            )], className='radio-group'),
+            html.H5("X Channel"),
+            dcc.Dropdown(id='x-channel', options=sorted(set([multi_key[0] for idx, multi_key in enumerate(multi_indices[0])])), value=opt_options['x']),
+            html.H5("Y Channel"),
+            dcc.Dropdown(id='y-channel', options=sorted(set([multi_key[0] for idx, multi_key in enumerate(multi_indices[0])])), value=opt_options['y'], multi=True),
+            dcc.Graph(id='dlc-output', figure=empty_figure()),                          # Related functions: update_dlc_plot()
+        ])
 
     return title_phrase, sublayout
-    '''
+
 
 @callback(Output('dlc-output', 'figure', allow_duplicate=True),
           Input('dlc-output-iteration', 'children'),
           Input('var-opt', 'data'),
           prevent_initial_call=True)
 def update_raft_outputs(title_phrase, opt_options):
-    print('update raft gifs')
 
-    # Reference --- works! (animation)
+    if opt_options['opt_type'] != 'RAFT':
+        raise PreventUpdate
+
+    # TODO: Make it animation? Reference that works
     # import plotly.express as px
     # df = px.data.gapminder()
     # fig = px.scatter(df, x="gdpPercap", y="lifeExp", animation_frame="year", animation_group="country",
     #         size="pop", color="continent", hover_name="country",
     #         log_x=True, size_max=55, range_x=[100,100000], range_y=[25,90])
 
-    # raft_design_dir = '/projects/weis/sryu/visualization_cases/1_raft_opt/raft_designs'
-    raft_design_dir = '/'.join(opt_options['log_file_path'].split('/')[:-1]) + '/raft_designs'
-
     # Create figure
     fig = go.Figure()
+    png_per_iteration = Image.open(f"{opt_options['raft_design_dir']}/../raft_plots/ptfm_{iteration}.png")
+    img_width, img_height = png_per_iteration.size
 
     # Constants
-    img_width = 1600
-    img_height = 900
-    scale_factor = 0.5
+    scale_factor = 0.8
 
     # Add invisible scatter trace.
     # This trace is added to help the autoresize logic work.
@@ -401,9 +386,6 @@ def update_raft_outputs(title_phrase, opt_options):
         scaleanchor="x"
     )
 
-    png_per_iteration = Image.open(f"{raft_design_dir}/../raft_plots/ptfm_{iteration}.png")
-
-
     # Add image
     fig.add_layout_image(
         dict(
@@ -421,9 +403,11 @@ def update_raft_outputs(title_phrase, opt_options):
 
     # Configure other layout
     fig.update_layout(
-        width=img_width * scale_factor,
-        height=img_height * scale_factor,
+        # width=img_width * scale_factor,
+        # height=img_height * scale_factor,
         margin={"l": 0, "r": 0, "t": 0, "b": 0},
+        paper_bgcolor="rgba(255, 255, 255, 255)",
+        plot_bgcolor="rgba(255, 255, 255, 255)"
     )
 
     return fig
