@@ -38,9 +38,7 @@ def check_input_file(contents):
         return html.Div([html.H5("Empty content..")])
     
     file_tree_list = dict_to_html(contents, [], level=1)
-    # print(file_tree_list)       # [H5('Heading 1'), H5('Heading 2'), H5('Heading 3'), H5('Heading 4'), H5('Heading 5')]
-    # print(*file_tree_list)      # H5('Heading 1') H5('Heading 2') H5('Heading 3') H5('Heading 4') H5('Heading 5')
-
+    
     return html.Div([*file_tree_list], style={'width':'80vw', 'marginLeft': 100, 'border-left-style':'dotted'})
 
 

@@ -155,8 +155,8 @@ def draw_cost_chart(cost_options):
         branchvalues='total'
     ))
     fig.update_traces(textinfo='label+percent parent')
-    fig.update_layout(margin = dict(t=0, l=200, r=0, b=0), autosize=False, height=800, width=800,)
-                      # font = dict(family=['Arial' for _ in range(len(labels))], size=[10 for _ in range(len(labels))]))
-
+    fig.update_layout(
+        margin={"l": 0, "r": 0, "t": 0, "b": 0}
+    )
 
     return fig
