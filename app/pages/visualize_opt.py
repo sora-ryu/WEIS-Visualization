@@ -10,11 +10,12 @@ import dash_bootstrap_components as dbc
 from dash import html, register_page, callback, Input, Output, dcc, State
 import numpy as np
 import os
+from PIL import Image
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import plotly.io as pio
 from dash.exceptions import PreventUpdate
-from weis.visualization.utils import read_cm, load_OMsql, parse_contents, find_file_path_from_tree, find_iterations, empty_figure, toggle, read_per_iteration, get_timeseries_data, update_yaml
+from weis.visualization.utils import read_cm, load_OMsql, parse_contents, find_file_path_from_tree, find_iterations, empty_figure, toggle, read_per_iteration, get_timeseries_data, update_yaml, generate_raft_img
 
 register_page(
     __name__,
@@ -24,6 +25,25 @@ register_page(
 )
 
 pio.templates.default = "ggplot2"
+
+
+def read_opt_vars_per_type(input_dict):
+    opt_options = {}
+    opt_type_reference = {1: 'RAFT', 2: 'OpenFAST'}     # TODO: Expand other types of optimizations
+
+    opt_options['root_file_path'] = '/'.join(input_dict['userOptions']['output_folder'].split('/')[:-1])           # Remove the last output folder name for future path join
+    opt_options['log_file_path'] = os.path.join(opt_options['root_file_path'], '/'.join(k for k in next(find_file_path_from_tree(input_dict['outputDirStructure'], input_dict['userOptions']['sql_recorder_file'])) if k not in ['dirs', 'files']))
+    
+    var_opt = input_dict['userPreferences']['optimization']
+    opt_options['conv_y'] = var_opt['convergence']['channels']
+
+    # opt_type = input_dict['userOptions']['optimization']['type']
+
+    return opt_options
+
+    
+
+
 
 ###############################################
 #   Read Optimization related variables/data from yaml file
@@ -35,6 +55,12 @@ def read_variables(input_dict):
     if input_dict is None or input_dict == {}:
         raise PreventUpdate
     
+    if input_dict['userOptions']['optimization']['status'] == True:
+        opt_options = read_opt_vars_per_type(input_dict)
+
+
+    '''
+    # Previous codes before classifying by types
     opt_options = {}
     var_opt = input_dict['userPreferences']['optimization']
     opt_options['root_file_path'] = '/'.join(input_dict['userOptions']['output_folder'].split('/')[:-1])           # Remove the last output folder name for future path join
@@ -57,17 +83,18 @@ def read_variables(input_dict):
     opt_options['x'] = var_opt['dlc']['xaxis']
     opt_options['y'] = var_opt['dlc']['yaxis']
     opt_options['y_time'] = var_opt['timeseries']['channels']
+    '''
 
-    print("Parse variables from opt..\n", opt_options)
+    print("Parse variables from optimization..\n", opt_options)
 
     return opt_options
 
 
 def read_log(log_file_path):
-    global df       # set the dataframe as a global variable to access it from the get_trace() function.
+    global log_data, df       # set the dataframe as a global variable to access it from the get_trace() function.
     log_data = load_OMsql(log_file_path)
     df = parse_contents(log_data)
-    # df.to_csv('RAFT/log_opt.csv', index=False)
+    # df.to_csv('log_opt.csv', index=False)
 
 
 ###############################################
@@ -79,6 +106,12 @@ def read_log(log_file_path):
 def define_convergence_layout(opt_options):
     # Read log file
     read_log(opt_options['log_file_path'])
+
+
+    # Generate RAFT Output Files
+    # raft_design_dir = '/projects/weis/sryu/visualization_cases/1_raft_opt/raft_designs'
+    # raft_design_dir = '/'.join(opt_options['log_file_path'].split('/')[:-1]) + '/raft_designs'
+    # generate_raft_img(raft_design_dir, log_data)
 
     # Layout for visualizing Conv-trend data
     convergence_layout = dbc.Card(
@@ -139,15 +172,15 @@ def layout():
 
 
 
-###############################################
-#   Convergence trend data related functions
-###############################################
+###################################################################
+#   Main Left Layout: Convergence trend data related functions
+###################################################################
 
 def get_trace(label):
     '''
     Add the line graph (trace) for each channel (label)
     '''
-    print(df)
+    # print(df)
     assert isinstance(df[label][0], np.ndarray) == True
     trace_list = []
     # print(f'{label}:')
@@ -158,11 +191,11 @@ def get_trace(label):
     
     # Need to parse the data depending on the dimension of values
     if df[label][0].ndim == 0:      # For single value
-        print('Single value')
+        # print('Single value')
         trace_list.append(go.Scatter(y = [df[label][i] for i in range(len(df[label]))], mode = 'lines+markers', name = label))
     
     elif df[label][0].ndim == 1:    # For 1d-array
-        print('1D-array')
+        # print('1D-array')
         for i in range(df[label][0].size):
             trace_list.append(go.Scatter(y = df[label].str[i], mode = 'lines+markers', name = label+'_'+str(i)))        # Works perfectly fine with 'visualization_demo/log_opt.sql'
 
@@ -218,9 +251,9 @@ def update_graphs(signaly):
     return fig
 
 
-###############################################
-# DLC related functions
-###############################################
+###############################################################################
+# Main Right Layout: DLC related functions for OpenFAST // Plot GIF for RAFT
+###############################################################################
 
 @callback(Output('collapse', 'is_open'),
           Input('conv-trend', 'clickData'),
@@ -248,6 +281,19 @@ def update_dlc_outputs(clickData, opt_options):
     if clickData is None or opt_options is None:
         raise PreventUpdate
     
+    global iteration, stats, iteration_path, cm
+    iteration = clickData['points'][0]['x']
+    title_phrase = f'Iteration {iteration}'
+
+    sublayout = html.Div([
+        dcc.Graph(id='dlc-output', figure=empty_figure()),                          # Related functions: update_dlc_plot()
+    ])
+
+    return title_phrase, sublayout
+
+
+    '''
+    # OpenFAST DLC
     global iteration, stats, iteration_path, cm
     iteration = clickData['points'][0]['x']
     title_phrase = f'DLC Analysis on Iteration {iteration}'
@@ -304,6 +350,84 @@ def update_dlc_outputs(clickData, opt_options):
     ])
 
     return title_phrase, sublayout
+    '''
+
+@callback(Output('dlc-output', 'figure', allow_duplicate=True),
+          Input('dlc-output-iteration', 'children'),
+          Input('var-opt', 'data'),
+          prevent_initial_call=True)
+def update_raft_outputs(title_phrase, opt_options):
+    print('update raft gifs')
+
+    # Reference --- works! (animation)
+    # import plotly.express as px
+    # df = px.data.gapminder()
+    # fig = px.scatter(df, x="gdpPercap", y="lifeExp", animation_frame="year", animation_group="country",
+    #         size="pop", color="continent", hover_name="country",
+    #         log_x=True, size_max=55, range_x=[100,100000], range_y=[25,90])
+
+    # raft_design_dir = '/projects/weis/sryu/visualization_cases/1_raft_opt/raft_designs'
+    raft_design_dir = '/'.join(opt_options['log_file_path'].split('/')[:-1]) + '/raft_designs'
+
+    # Create figure
+    fig = go.Figure()
+
+    # Constants
+    img_width = 1600
+    img_height = 900
+    scale_factor = 0.5
+
+    # Add invisible scatter trace.
+    # This trace is added to help the autoresize logic work.
+    fig.add_trace(
+        go.Scatter(
+            x=[0, img_width * scale_factor],
+            y=[0, img_height * scale_factor],
+            mode="markers",
+            marker_opacity=0
+        )
+    )
+
+    # Configure axes
+    fig.update_xaxes(
+        visible=False,
+        range=[0, img_width * scale_factor]
+    )
+
+    fig.update_yaxes(
+        visible=False,
+        range=[0, img_height * scale_factor],
+        # the scaleanchor attribute ensures that the aspect ratio stays constant
+        scaleanchor="x"
+    )
+
+    png_per_iteration = Image.open(f"{raft_design_dir}/../raft_plots/ptfm_{iteration}.png")
+
+
+    # Add image
+    fig.add_layout_image(
+        dict(
+            x=0,
+            sizex=img_width * scale_factor,
+            y=img_height * scale_factor,
+            sizey=img_height * scale_factor,
+            xref="x",
+            yref="y",
+            opacity=1.0,
+            layer="below",
+            sizing="stretch",
+            source = png_per_iteration)
+    )
+
+    # Configure other layout
+    fig.update_layout(
+        width=img_width * scale_factor,
+        height=img_height * scale_factor,
+        margin={"l": 0, "r": 0, "t": 0, "b": 0},
+    )
+
+    return fig
+
 
 
 @callback(Output('dlc-output', 'figure'),
@@ -316,8 +440,8 @@ def update_dlc_plot(x_chan_option, y_chan_option, x_channel, y_channel):
     Once required channels and stats options have been selected, draw figures that demonstrate DLC analysis.
     It will show default figure with default settings.
     '''
-    if stats is None or x_channel is None or y_channel is None:
-        raise PreventUpdate
+    # if stats is None or x_channel is None or y_channel is None:
+    #     raise PreventUpdate
 
     fig = plot_dlc(cm, stats, x_chan_option, y_chan_option, x_channel, y_channel)
 
@@ -484,6 +608,6 @@ def save_optimization(opt_options, input_dict, signaly, x_chan_option, y_chan_op
     opt_options['y'] = y_channel
     opt_options['y_time'] = time_signaly
 
-    update_yaml(input_dict, input_dict['yaml_path'])
+    update_yaml(input_dict, input_dict['yamlPath'])
     
     return html.P(''), opt_options
